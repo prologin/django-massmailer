@@ -1,0 +1,112 @@
+{% extends "prologin/base.html" %}
+{% load i18n staticfiles %}
+{% load bootstrap django_bootstrap_breadcrumbs %}
+
+{% block title %}{% if query %}{{ query.name }}{% else %}{% trans "New query" %}{% endif %} – {% trans "Mailing" %}{% endblock %}
+
+{% block extra_head %}
+  <link rel="stylesheet" type="text/css" href="{% static 'lib/css/select2.min.css' %}">
+  <link rel="stylesheet" type="text/css" href="{% static 'mailing/mailing.css' %}">
+{% endblock %}
+
+{% block breadcrumbs %}
+  {{ block.super }}
+  {% breadcrumb_for 'mailing:dashboard' %}{% trans "Mailing" %}{% endbreadcrumb_for %}
+  {% breadcrumb_for 'mailing:dashboard' %}{% trans "Queries" %}{% endbreadcrumb_for %}
+  {% if query %}
+  {% breadcrumb_for 'mailing:query:update' %}{{ query.name }}{% endbreadcrumb_for %}
+  {% else %}
+  {% breadcrumb_for 'mailing:query:new' %}{% trans "New query" %}{% endbreadcrumb_for %}
+  {% endif %}
+{% endblock %}
+
+{% block content %}
+
+  {% if query %}
+  <h1>{% blocktrans with name=query.name %}Update query {{ name }}{% endblocktrans %}</h1>
+  {% else %}
+  <h1>{% trans "New query" %}</h1>
+  {% endif %}
+
+  {% if form.non_field_errors %}
+    <div class="alert alert-danger">
+        <a class="close" data-dismiss="alert">&times;</a>
+        {% for non_field_error in form.non_field_errors %}
+          {{ non_field_error }}
+        {% endfor %}
+    </div>
+  {% endif %}
+
+  <form class="form" method="post" id="editor-form">
+    {% csrf_token %}
+    {{ form.revisions }}
+    <div class="row">
+      <div class="col-md-6">
+        <h2>{% trans "Details" %}</h2>
+        {{ form.name|bootstrap }}
+        {{ form.description|bootstrap }}
+        {{ form.useful_with|bootstrap }}
+        {{ form.query|bootstrap }}
+        <button type="submit" class="btn btn-primary"><i class="fa fa-save"></i> {% trans "Save query" %}</button>
+      </div>
+
+      <div class="col-md-6">
+        <h2>{% trans "Preview" %}</h2>
+
+        <div class="panel panel-default">
+          <div class="panel-heading">
+            {% trans "Stats" %}
+          </div>
+          <div class="panel-body">
+            {% trans "Result count:" %} <code id="result-count"></code>
+          </div>
+        </div>
+        <div class="panel-group" id="accordion" role="tablist" aria-multiselectable="true">
+          <div class="panel panel-default">
+            <div class="panel-heading" role="tab" id="headingOne">
+              <h4 class="panel-title">
+                <a role="button" data-toggle="collapse" data-parent="#accordion" href="#wrap-result-sql"
+                   aria-expanded="true" aria-controls="wrap-result-sql">
+                  {% trans "Generated SQL query" %}
+                </a>
+              </h4>
+            </div>
+            <div id="wrap-result-sql" class="panel-collapse collapse" role="tabpanel" aria-labelledby="headingOne">
+              <pre class="panel-body panel-pre" id="result-sql" style="white-space: pre-wrap;"></pre>
+            </div>
+          </div>
+          <div class="panel panel-default">
+            <div class="panel-heading" role="tab" id="headingOne">
+              <h4 class="panel-title">
+                <a role="button" data-toggle="collapse" data-parent="#accordion" href="#wrap-result-data"
+                   aria-expanded="true" aria-controls="wrap-result-data">
+                  {% trans "Results" %}
+                </a>
+              </h4>
+            </div>
+            <div id="wrap-result-data" class="panel-collapse collapse in" role="tabpanel" aria-labelledby="headingOne">
+              <pre class="panel-body panel-pre" id="result-data"></pre>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </form>
+
+{% endblock %}
+
+{% block extra_script %}
+  <script type="text/javascript">
+    var PREVIEW_URL = '{% url 'mailing:query:preview' %}';
+  </script>
+  <script type="text/javascript" charset="utf-8" src="{% static 'js/utils.js' %}"></script>
+  <script type="text/javascript" charset="utf-8" src="{% static 'lib/js/select2.min.js' %}"></script>
+  <script type="text/javascript" charset="utf-8"
+          src="{% static 'problems/lib/ace/src-min-noconflict/ace.js' %}"></script>
+  <script type="text/javascript" charset="utf-8"
+          src="{% static 'problems/lib/ace/src-min-noconflict/ext-themelist.js' %}"></script>
+  <script type="text/javascript" charset="utf-8"
+          src="{% static 'problems/lib/ace/src-min-noconflict/ext-language_tools.js' %}"></script>
+  <script type="text/javascript" charset="utf-8" src="{% static 'mailing/query-editor.js' %}"></script>
+{% endblock %}
