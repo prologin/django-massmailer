@@ -3,6 +3,7 @@ import sys
 
 from django.core.management.base import BaseCommand
 from django.contrib.auth import get_user_model
+from djmail.models import Message, STATUS_SENT
 
 from prologin.email import send_email
 
@@ -12,21 +13,23 @@ class Command(BaseCommand):
 
     def __init__(self, *args, **kwargs):
         super().__init__(args, kwargs)
-        self.queries = ['all', 'test']
+        self.queries = ['all', 'test', 'exclude-pattern']
         self.actions = ['export', 'send']
         self.templates = ['start_contest']
 
     def add_arguments(self, parser):
-        parser.add_argument('--query', default='testasso',
-                help='The query to use among: {}'.format(self.queries))
-        parser.add_argument('--template', default=None,
-                help='The template to use among: {}'.format(self.templates))
+        parser.add_argument('--query', default='test', choices=self.queries,
+                            help='The query to use among: {}'.format(self.queries))
+        parser.add_argument('--pattern', default=None,
+                            help='The pattern to search for in body text, for --query exclude-pattern')
+        parser.add_argument('--template', default=None, choices=self.templates,
+                            help='The template to use among: {}'.format(self.templates))
         parser.add_argument('--dry', action='store_true',
-                help='Do not actually send the mails.')
+                            help='Do not actually send the mails.')
         parser.add_argument('--force-all', action='store_true',
-                help='Even for users who did not check the Allow Mailing box')
+                            help='Even for users who did not check the Allow Mailing box')
         parser.add_argument('--fields', default='email',
-                help='The model fields wanted in the export separated by commas')
+                            help='The model fields wanted in the export separated by commas')
 
         parser.add_argument('action', help='Action to use among: [{}]'
                 .format(self.actions))
@@ -39,17 +42,28 @@ class Command(BaseCommand):
             if (input('Warning: users who do not want to receive mails ARE '
                       'INCLUDED in this list. Type "This is fine" to confirm: '
                       ).lower() != 'this is fine'):
-                print('error: wrong answer.')
+                self.stderr.write('error: wrong answer.')
                 sys.exit(1)
 
         if options['query'] == 'all':
             pass
-        elif options['query'] == 'testasso':
+        elif options['query'] == 'exclude-pattern':
+            if not options['pattern']:
+                self.stderr.write("--pattern option is required")
+                sys.exit(1)
+            already_sent = Message.objects.filter(status=STATUS_SENT, body_text__icontains=options['pattern'])
+            already_sent = set(already_sent.values_list('to_email', flat=True))
+            query = query.exclude(email__in=already_sent)
+        elif options['query'] == 'test':
             query = query.filter(email='association@prologin.org')
+
+        if not query.count():
+            self.stderr.write('error: query returned no result')
+            sys.exit(1)
 
         action = options['action']
         if action not in self.actions:
-            print('error: action unknown: {}'.format(action))
+            self.stderr.write('error: action unknown: {}'.format(action))
             sys.exit(1)
         getattr(self, action)(query, *args, **options)
 
@@ -62,18 +76,17 @@ class Command(BaseCommand):
 
     def send(self, basequery, *args, **options):
         if options['template'] not in self.templates:
-            print('error: wrong or no template given.')
+            self.stderr.write('error: wrong or no template given.')
             sys.exit(1)
         if not options['dry'] and ((input('You are ACTUALLY sending a mail to '
                   '{} people. Type "This is fine" to confirm: '
                   .format(len(basequery)))).lower() != 'this is fine'):
-            print('error: wrong answer.')
+            self.stderr.write('error: wrong answer.')
             sys.exit(1)
 
         for i, u in enumerate(basequery, 1):
-            print('Sending mail to "{}" <{}> ({} / {})'
+            self.stdout.write('Sending mail to "{}" <{}> ({} / {})'
                     .format(u.username, u.email, i, len(basequery)))
             if not options['dry']:
                 send_email('mailing/{}'.format(options['template']),
                         u.email, {'user': u})
-
