@@ -15,7 +15,7 @@ class Command(BaseCommand):
         super().__init__(args, kwargs)
         self.queries = ['all', 'test', 'exclude-pattern']
         self.actions = ['export', 'send']
-        self.templates = ['start_contest']
+        self.templates = ['start_contest', "end_qualifications"]
 
     def add_arguments(self, parser):
         parser.add_argument('--query', default='test', choices=self.queries,
