@@ -1,4 +1,5 @@
-Bonjour {{ prenom }} !
+{% spaceless %}{% autoescape off %}
+Bonjour {{ user.first_name }} !
 
 Comme tu le sais sûrement, les inscriptions pour l'édition 2016 du
 concours Prologin touchent à leur fin.
@@ -35,4 +36,5 @@ http://twitter.com/prologin - http://facebook.com/prologin
 
 Si vous ne souhaitez plus recevoir d'e-mail de Prologin, décochez la
 case « Autoriser Prologin à m'envoyer des e-mails » dans les
-paramètres de votre compte ({{ unsubscribe_url }}), ou contactez-nous.
+paramètres de votre compte ({{ user.get_unsubscribe_url }}), ou contactez-nous.
+{% endautoescape %}{% endspaceless %}
