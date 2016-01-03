@@ -90,7 +90,6 @@ class Command(BaseCommand):
                     .format(u.username, u.email, i, len(basequery)))
             if not options['dry']:
                 try:
-                    raise Exception
                     send_email('mailing/{}'.format(options['template']),
                             u.email, {'user': u})
                 except:
