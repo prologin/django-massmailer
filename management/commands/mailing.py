@@ -1,5 +1,6 @@
 import csv
 import sys
+from traceback import print_exc
 
 from django.core.management.base import BaseCommand
 from django.contrib.auth import get_user_model
@@ -88,5 +89,9 @@ class Command(BaseCommand):
             self.stdout.write('Sending mail to "{}" <{}> ({} / {})'
                     .format(u.username, u.email, i, len(basequery)))
             if not options['dry']:
-                send_email('mailing/{}'.format(options['template']),
-                        u.email, {'user': u})
+                try:
+                    raise Exception
+                    send_email('mailing/{}'.format(options['template']),
+                            u.email, {'user': u})
+                except:
+                    print_exc()
