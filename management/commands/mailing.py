@@ -5,6 +5,7 @@ from traceback import print_exc
 from django.core.management.base import BaseCommand
 from django.contrib.auth import get_user_model
 from djmail.models import Message, STATUS_SENT
+from django.template import Template, Context
 
 from prologin.email import send_email
 
@@ -31,6 +32,8 @@ class Command(BaseCommand):
                             help='Even for users who did not check the Allow Mailing box')
         parser.add_argument('--fields', default='email',
                             help='The model fields wanted in the export separated by commas')
+        parser.add_argument('--attachment', action='append', default=list(),
+                            help='Attachment to send with the mail (Can be templated)')
 
         parser.add_argument('action', help='Action to use among: [{}]'
                 .format(self.actions))
@@ -88,9 +91,11 @@ class Command(BaseCommand):
         for i, u in enumerate(basequery, 1):
             self.stdout.write('Sending mail to "{}" <{}> ({} / {})'
                     .format(u.username, u.email, i, len(basequery)))
+            render_attachement = lambda s: Template(s).render(Context({'user': u}))
+            attachements = list(map(render_attachement, options['attachment']))
             if not options['dry']:
                 try:
                     send_email('mailing/{}'.format(options['template']),
-                            u.email, {'user': u})
+                            u.email, {'user': u}, attachements)
                 except:
                     print_exc()
