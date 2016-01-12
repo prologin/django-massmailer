@@ -1,0 +1,65 @@
+{% spaceless %}{% autoescape off %}
+Bonjour {{ user.first_name|title }},
+
+Nous avons le plaisir de t'informer que tu es sélectionné{% f user.gender == 1 %}e{% endif %} pour la phase des
+épreuves régionales du concours Prologin {{ year }}.
+
+Ton épreuve aura lieu à l'adresse suivante :
+
+{{ center.name }}
+{{ center.address }}
+{{ center.postal_code }} {{ center.city }}
+
+L'équipe de Prologin te donne rendez-vous le {{ event.date_begin|date:"l d F Y" }}
+à partir de 8 heures 45 (début des épreuves à 9 heures). Nous te
+demandons de bien vouloir te munir d'une pièce d'identité et de ta
+convocation.
+
+Pour préparer l'épreuve régionale, voici quelques termes qu'il est bon
+de connaître.
+
+- Récursivité : https://fr.wikipedia.org/wiki/Algorithme_r%C3%A9cursif
+
+- File :
+  https://fr.wikipedia.org/wiki/File_%28structure_de_donn%C3%A9es%29
+
+- Pile : https://fr.wikipedia.org/wiki/Pile_%28informatique%29
+
+- Parcours d'arbres :
+  https://fr.wikipedia.org/wiki/Arbre_%28informatique%29#Parcours
+
+- Parcours de graphes :
+  https://fr.wikipedia.org/wiki/Parcours_en_profondeur et
+  https://fr.wikipedia.org/wiki/Algorithme_de_parcours_en_largeur
+
+- Sache qu'une documentation pour chacun des langages supportés sera
+  accessible pendant l'épreuve machine.
+
+Quelques autres ressources utiles :
+
+- les sujets écrits des années précédentes :
+  https://prologin.org/archives/
+
+- les sujets machines du serveur d'entraînement :
+  https://www.prologin.org/train/
+
+- le forum : https://prologin.org/forum/
+
+- notre salon IRC (#prologin sur chat.freenode.net)
+
+Nous restons à ta disposition pour toutes questions. N'hésite pas
+à nous contacter à tout moment par email (info@prologin.org).
+
+Toutes nos félicitations, et à très bientôt !
+
+Le président, Alexandre Bonnetain.
+
+-- 
+----------------------------------------------------------------------
+                             * Prologin *
+                 Le Concours National d'Informatique
+        14-16 rue Voltaire - 94270 Le Kremlin-Bicêtre - France
+          association@prologin.org - https://prologin.org
+       https://twitter.com/prologin - https://facebook.com/prologin
+----------------------------------------------------------------------
+{% endautoescape %}{% endspaceless %}

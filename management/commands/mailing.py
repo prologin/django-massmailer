@@ -1,13 +1,16 @@
 import csv
 import sys
-from traceback import print_exc
+import traceback
 
 from django.core.management.base import BaseCommand
 from django.contrib.auth import get_user_model
 from djmail.models import Message, STATUS_SENT
 from django.template import Template, Context
+from django.conf import settings
 
 from prologin.email import send_email
+from contest.models import Assignation
+from documents.models import generate_tex_pdf
 
 
 class Command(BaseCommand):
@@ -15,9 +18,11 @@ class Command(BaseCommand):
 
     def __init__(self, *args, **kwargs):
         super().__init__(args, kwargs)
-        self.queries = ['all', 'test', 'exclude-pattern']
-        self.actions = ['export', 'send']
-        self.templates = ['start_contest', "end_qualifications"]
+        self.queries = ['all', 'test', 'exclude-pattern', 'semifinal_qualified',
+            'semifinal_ruled_out']
+        self.actions = ['export', 'send', 'send_semifinal_qualified']
+        self.templates = ['start_contest', 'end_qualifications',
+            'semifinal_not_qualified']
 
     def add_arguments(self, parser):
         parser.add_argument('--query', default='test', choices=self.queries,
@@ -32,11 +37,8 @@ class Command(BaseCommand):
                             help='Even for users who did not check the Allow Mailing box')
         parser.add_argument('--fields', default='email',
                             help='The model fields wanted in the export separated by commas')
-        parser.add_argument('--attachment', action='append', default=list(),
-                            help='Attachment to send with the mail (Can be templated)')
 
-        parser.add_argument('action', help='Action to use among: [{}]'
-                .format(self.actions))
+        parser.add_argument('action', help='Action to use among: [{}]'.format(self.actions))
 
     def handle(self, *args, **options):
         query = get_user_model().objects.all()
@@ -49,8 +51,10 @@ class Command(BaseCommand):
                 self.stderr.write('error: wrong answer.')
                 sys.exit(1)
 
+        # TODO(halfr): refactor
         if options['query'] == 'all':
             pass
+        # TODO(halfr): remove legacy
         elif options['query'] == 'exclude-pattern':
             if not options['pattern']:
                 self.stderr.write("--pattern option is required")
@@ -59,7 +63,14 @@ class Command(BaseCommand):
             already_sent = set(already_sent.values_list('to_email', flat=True))
             query = query.exclude(email__in=already_sent)
         elif options['query'] == 'test':
-            query = query.filter(email='association@prologin.org')
+            query = query.filter(email='association+test@prologin.org')
+        elif options['query'] == 'semifinal_ruled_out':
+            query = query.filter(contestants__edition__year=2016,
+                contestants__assignation_semifinal=Assignation.ruled_out.value)
+
+        if options['action'] == 'send_semifinal_qualified':
+            query = query.filter(contestants__edition__year=2016,
+                contestants__assignation_semifinal=Assignation.assigned.value)
 
         if not query.count():
             self.stderr.write('error: query returned no result')
@@ -78,24 +89,57 @@ class Command(BaseCommand):
         for u in basequery:
             writer.writerow({f: getattr(u, f) for f in fields})
 
+    def check_user_brain(self, query):
+        msg = ('You are ACTUALLY sending a mail to {} people. '
+               'Type "This is fine" to confirm: '.format(len(query)))
+        if input(msg).lower() != 'this is fine'
+            self.stderr.write('error: wrong answer.')
+            sys.exit(1)
+
     def send(self, basequery, *args, **options):
         if options['template'] not in self.templates:
             self.stderr.write('error: wrong or no template given.')
             sys.exit(1)
-        if not options['dry'] and ((input('You are ACTUALLY sending a mail to '
-                  '{} people. Type "This is fine" to confirm: '
-                  .format(len(basequery)))).lower() != 'this is fine'):
-            self.stderr.write('error: wrong answer.')
-            sys.exit(1)
+
+        self.check_user_brain(basequery)
 
         for i, u in enumerate(basequery, 1):
             self.stdout.write('Sending mail to "{}" <{}> ({} / {})'
-                    .format(u.username, u.email, i, len(basequery)))
-            render_attachement = lambda s: Template(s).render(Context({'user': u}))
-            attachements = list(map(render_attachement, options['attachment']))
+                              .format(u.username, u.email, i, len(basequery)))
             if not options['dry']:
                 try:
+                    ctx = {'user': u, 'year': 2016,
+                           'train_url': settings.SITE_BASE_URL + '/train'}
                     send_email('mailing/{}'.format(options['template']),
-                            u.email, {'user': u}, attachements)
+                               u.email, ctx)
                 except:
-                    print_exc()
+                    traceback.print_exc()
+
+    def send_semifinal_qualified(self, qualified, *args, **options):
+        self.check_user_brain(qualified)
+
+        for i, user in enumerate(qualified):
+            self.stdout.write('Sending mail to "{}" <{}> ({} / {})'
+                              .format(user.username, u.email, i, len(qualified)))
+
+            contestant = user.contestants.get(edition__year=2016)
+            center = contestant.assignation_semifinal_event.center
+            ctx = {
+                'user': user,
+                'items': [contestant],
+                'center': center,
+                'year': 2016,
+                'url': settings.SITE_BASE_URL + '/train',
+            }
+            with generate_tex_pdf('documents/droit-image.tex', ctx) as portayal_agreement_content:
+                with generate_tex_pdf('documents/convocation-regionale.tex', ctx) as convocation_content:
+                    attachements = (
+                        ('Prologin2016ConvocationRegionale.pdf', convocation_content.read(), 'application/pdf'),
+                        ('Prologin2016DroitImage.pdf', portayal_agreement_content.read(), 'application/pdf'),
+                    )
+                    try:
+                        if options['dry']:
+                            continue
+                        send_email('mailing/semifinal_qualified', user.email, ctx, attachements)
+                    except:
+                        traceback.print_exc()

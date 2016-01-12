@@ -1,0 +1,31 @@
+{% spaceless %}{% autoescape off %}
+Bonjour {{ user.first_name|title }},
+
+Nous avons le regret de t'informer qu'après classement et
+délibération, tu n'es malheureusement pas sélectionné{% if user.gender == 1 %}e{% endif %} pour les
+épreuves régionales du concours Prologin {{ year }}.
+
+Nous espérons toutefois que tu resteras motivé{% if user.gender == 1 %}e{% endif %} pour retenter
+l'aventure (si ton âge le permet) à l'occasion de l'édition {{ year|add:"1" }} du
+concours. Et cette fois-ci, n'ayant pas manqué de progresser, sans
+doute iras-tu en épreuve régionale !
+
+Pour t'aider à progresser, nous t'invitons à utiliser notre site
+d'entraînement : {{ train_url }}
+
+Nous restons à ta disposition pour toutes questions. N'hésite pas
+à nous contacter à tout moment par email (info@prologin.org).
+
+À bientôt !
+
+Le président, Alexandre Bonnetain.
+
+-- 
+----------------------------------------------------------------------
+                             * Prologin *
+                 Le Concours National d'Informatique
+        14-16 rue Voltaire - 94270 Le Kremlin-Bicêtre - France
+          association@prologin.org - https://prologin.org
+       https://twitter.com/prologin - https://facebook.com/prologin
+----------------------------------------------------------------------
+{% endautoescape %}{% endspaceless %}
