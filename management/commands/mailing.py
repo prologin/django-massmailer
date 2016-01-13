@@ -92,7 +92,7 @@ class Command(BaseCommand):
     def check_user_brain(self, query):
         msg = ('You are ACTUALLY sending a mail to {} people. '
                'Type "This is fine" to confirm: '.format(len(query)))
-        if input(msg).lower() != 'this is fine'
+        if input(msg).lower() != 'this is fine':
             self.stderr.write('error: wrong answer.')
             sys.exit(1)
 
