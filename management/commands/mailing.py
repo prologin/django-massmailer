@@ -109,7 +109,9 @@ class Command(BaseCommand):
             if not options['dry']:
                 try:
                     ctx = {'user': u, 'year': 2016,
-                           'train_url': settings.SITE_BASE_URL + '/train'}
+                           'train_url': settings.SITE_BASE_URL + '/train',
+                           'forum_url': settings.SITE_BASE_URL + '/forum',
+                    }
                     send_email('mailing/{}'.format(options['template']),
                                u.email, ctx)
                 except:

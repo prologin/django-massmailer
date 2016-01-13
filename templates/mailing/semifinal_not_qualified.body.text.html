@@ -1,7 +1,7 @@
 {% spaceless %}{% autoescape off %}
 Bonjour {{ user.first_name|title }},
 
-Nous avons le regret de t'informer qu'après classement et
+Nous avons le regret de t'informer qu'après correction et
 délibération, tu n'es malheureusement pas sélectionné{% if user.gender == 1 %}e{% endif %} pour les
 épreuves régionales du concours Prologin {{ year }}.
 
@@ -14,11 +14,10 @@ Pour t'aider à progresser, nous t'invitons à utiliser notre site
 d'entraînement : {{ train_url }}
 
 Nous restons à ta disposition pour toutes questions. N'hésite pas
-à nous contacter à tout moment par email (info@prologin.org).
+à nous contacter à tout moment par email (info@prologin.org) ou sur le forum :
+{{ forum_url }}.
 
 À bientôt !
-
-Le président, Alexandre Bonnetain.
 
 -- 
 L'équipe Prologin
