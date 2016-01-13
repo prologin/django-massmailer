@@ -26,13 +26,13 @@ class Command(BaseCommand):
                     email = msg['To']
                     print(email)
                     try:
-                        user = User.get(email__iexact=email)
+                        user = User.objects.get(email__iexact=email)
                         user.is_active = False
                         user.allow_mailing = False
                         user.save()
                         print('  -> User {} deactivated.'.format(user))
                     except User.DoesNotExist:
-                        print('  -> User not found.'.format(user))
+                        print('  -> User not found.')
 
-                except: # wtf?
-                    pass
+                except Exception as e: # wtf?
+                    print(e)
