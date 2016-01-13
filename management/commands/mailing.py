@@ -135,7 +135,7 @@ class Command(BaseCommand):
                 'year': 2016,
                 'url': settings.SITE_BASE_URL + '/train',
             }
-            with generate_tex_pdf('documents/droit-image.tex', ctx) as portayal_agreement_content:
+            with generate_tex_pdf('documents/droit-image-regionale.tex', ctx) as portayal_agreement_content:
                 with generate_tex_pdf('documents/convocation-regionale.tex', ctx) as convocation_content:
                     attachements = (
                         ('Prologin2016ConvocationRegionale.pdf', convocation_content.read(), 'application/pdf'),
