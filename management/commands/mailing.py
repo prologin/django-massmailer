@@ -122,7 +122,7 @@ class Command(BaseCommand):
 
         for i, user in enumerate(qualified):
             self.stdout.write('Sending mail to "{}" <{}> ({} / {})'
-                              .format(user.username, u.email, i, len(qualified)))
+                              .format(user.username, user.email, i, len(qualified)))
 
             contestant = user.contestants.get(edition__year=2016)
             event = contestant.assignation_semifinal_event
