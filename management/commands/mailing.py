@@ -123,10 +123,12 @@ class Command(BaseCommand):
                               .format(user.username, u.email, i, len(qualified)))
 
             contestant = user.contestants.get(edition__year=2016)
-            center = contestant.assignation_semifinal_event.center
+            event = contestant.assignation_semifinal_event
+            center = event.center
             ctx = {
                 'user': user,
                 'items': [contestant],
+                'event': event,
                 'center': center,
                 'year': 2016,
                 'url': settings.SITE_BASE_URL + '/train',
