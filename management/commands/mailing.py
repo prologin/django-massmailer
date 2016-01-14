@@ -1,16 +1,19 @@
+import collections
 import csv
 import sys
 import traceback
 
-from django.core.management.base import BaseCommand
-from django.contrib.auth import get_user_model
-from djmail.models import Message, STATUS_SENT
-from django.template import Template, Context
 from django.conf import settings
+from django.contrib.auth import get_user_model
+from django.core.management.base import BaseCommand
+from django.template import Template, Context
+from django.utils import translation
+from djmail.models import Message, STATUS_SENT
 
-from prologin.email import send_email
 from contest.models import Assignation
 from documents.models import generate_tex_pdf
+from prologin.email import send_email
+import contest.models
 
 
 class Command(BaseCommand):
@@ -120,18 +123,32 @@ class Command(BaseCommand):
     def send_semifinal_qualified(self, qualified, *args, **options):
         self.check_user_brain(qualified)
 
-        for i, user in enumerate(qualified):
+        # For date formatting in templates
+        translation.activate('fr')
+
+        for i, user in enumerate(qualified, 1):
             self.stdout.write('Sending mail to "{}" <{}> ({} / {})'
                               .format(user.username, user.email, i, len(qualified)))
 
+            # TODO: refactor with document module
+            locations = collections.defaultdict(list)
+            semifinals = list(contest.models.Event.objects
+                              .select_related('edition')
+                              .filter(edition__year=settings.PROLOGIN_EDITION,
+                                      type=contest.models.Event.Type.semifinal.value))
+            for event in semifinals:
+                locations[event.date_begin.date()].append(event.center.city)
+            locations = [(k, ', '.join(v).title()) for k, v in locations.items()]
             contestant = user.contestants.get(edition__year=2016)
             event = contestant.assignation_semifinal_event
             center = event.center
+
             ctx = {
                 'user': user,
                 'items': [contestant],
                 'event': event,
                 'center': center,
+                'locations': locations,
                 'year': 2016,
                 'url': settings.SITE_BASE_URL + '/train',
             }

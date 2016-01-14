@@ -1,7 +1,7 @@
 {% spaceless %}{% autoescape off %}
 Bonjour {{ user.first_name|title }},
 
-Nous avons le plaisir de t'informer que tu es sélectionné{% f user.gender == 1 %}e{% endif %} pour la phase des
+Nous avons le plaisir de t'informer que tu es sélectionné{% if user.gender == 1 %}e{% endif %} pour la phase des
 épreuves régionales du concours Prologin {{ year }}.
 
 Ton épreuve aura lieu à l'adresse suivante :
@@ -13,27 +13,15 @@ Ton épreuve aura lieu à l'adresse suivante :
 L'équipe de Prologin te donne rendez-vous le {{ event.date_begin|date:"l d F Y" }}
 à partir de 8 heures 45 (début des épreuves à 9 heures). Nous te
 demandons de bien vouloir te munir d'une pièce d'identité et de ta
-convocation.
+convocation ainsi que de ta fiche de droit à l'image complétée.
 
-Pour préparer l'épreuve régionale, voici quelques termes qu'il est bon
-de connaître.
+Tu devrais recevoir ces documents par La Poste. Si notre lettre ne t'arrive
+pas, tu pourras imprimer ceux en pièces jointes.
 
-- Récursivité : https://fr.wikipedia.org/wiki/Algorithme_r%C3%A9cursif
+Pour préparer l'épreuve régionale, voici un article contenant des notions
+qu'il est bon de connaître :
 
-- File :
-  https://fr.wikipedia.org/wiki/File_%28structure_de_donn%C3%A9es%29
-
-- Pile : https://fr.wikipedia.org/wiki/Pile_%28informatique%29
-
-- Parcours d'arbres :
-  https://fr.wikipedia.org/wiki/Arbre_%28informatique%29#Parcours
-
-- Parcours de graphes :
-  https://fr.wikipedia.org/wiki/Parcours_en_profondeur et
-  https://fr.wikipedia.org/wiki/Algorithme_de_parcours_en_largeur
-
-- Sache qu'une documentation pour chacun des langages supportés sera
-  accessible pendant l'épreuve machine.
+- https://prologin.org/forum/entrainement-3/ressources-concernant-lalgorithmique-900/
 
 Quelques autres ressources utiles :
 
