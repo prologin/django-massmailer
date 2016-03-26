@@ -1,0 +1,24 @@
+{% spaceless %}{% autoescape off %}
+Bonjour {{ user.first_name|title }},
+
+Nous avons le regret de t'informer qu'après correction et
+délibération, tu n'es malheureusement pas sélectionné{% if user.gender == 1 %}e{% endif %} pour la finale
+du concours Prologin {{ year }}.
+
+Nous espérons toutefois que tu resteras motivé{% if user.gender == 1 %}e{% endif %} pour retenter
+l'aventure (si ton âge le permet) à l'occasion de l'édition {{ year|add:"1" }} du
+concours. Et cette fois-ci, n'ayant pas manqué de progresser, sans
+doute iras-tu en finale !
+
+Pour t'aider à progresser, nous t'invitons à utiliser notre site
+d'entraînement : {{ train_url }}
+
+Nous restons à ta disposition pour toutes questions. N'hésite pas
+à nous contacter à tout moment par email (info@prologin.org) ou sur le forum :
+{{ forum_url }}.
+
+À bientôt !
+
+-- 
+L'équipe Prologin
+{% endautoescape %}{% endspaceless %}

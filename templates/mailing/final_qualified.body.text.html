@@ -1,0 +1,58 @@
+{% spaceless %}{% autoescape off %}
+Bonjour {{ user.first_name|title }},
+
+Nous avons le plaisir de t'informer que tu es sélectionné{% if user.gender == 1 %}e{% endif %} pour
+la finale du concours Prologin 2016. L'équipe de Prologin te donne
+donc rendez-vous le samedi 14 mai à 9 h à l'adresse suivante :
+
+                                EPITA
+                            24 rue Pasteur
+                       94270 Le Kremlin-Bicêtre
+
+Ceux qui le souhaitent peuvent passer la nuit du vendredi à l'école.
+Les organisateurs Prologin assureront l'accueil à partir de 17 h et
+proposeront entre autres des formations GNU/Linux pendant la soirée.
+Le concours, d'une durée de 36 heures, prendra fin avec le banquet du
+lundi 15 mai à midi. Vous serez donc libre à partir de 15 h.
+
+Durant toute la durée du concours, nous prendrons en charge les repas
+et le logement. Un planning plus détaillé des activités est fourni en
+pièce jointe.
+
+Tu peux trouver ici une carte pour l'accès aux locaux.
+https://goo.gl/maps/VARWAivyM272
+Comme tu peux le constater, il existe un chemin simple depuis la
+station Porte d'Italie (métro 7, tram 3a), en ligne droite puis à
+gauche pour rejoindre la rue Pasteur peu après le Boulevard
+Périphérique.
+
+Tu recevras prochainement une convocation par courrier, ainsi que
+divers formulaires à remplir. Tu devras les présenter remplis et
+signés le jour de ton arrivée, sans quoi nous ne pourrons vous
+accepter. Au cas où ces documents ne te parviendraient pas par voie
+postale, ils te sont fournis en pièce jointe afin que tu puisses
+les imprimer par tes propres soins. Voici une liste exhaustive des
+formulaires nécessaires :
+
+* convocation,
+* autorisation de diffusion d'image,
+* décharge en cas de perte, vol ou dégradation de matériel,
+* personnes à contacter en cas d'urgence,
+* autorisation de participation (pour les candidats mineurs).
+
+Enfin, tu peux consulter les sujets de finale des années
+précédentes sur notre site web, à l'adresse suivante :
+https://prologin.org/archives/
+Note que la programmation se fera obligatoirement en C, C++, C#,
+Haskell, Java, OCaml, PHP ou Python.
+
+Nous restons à ta disposition pour tout renseignement, n'hésite
+pas à nous contacter à tout moment. Tu peux également poser tes
+questions sur le forum : http://prologin.org/forum ou sur notre
+salon de discussion IRC : #prologin @ irc.freenode.net.
+
+Encore toutes nos félicitations,
+
+-- 
+L'équipe Prologin
+{% endautoescape %}{% endspaceless %}
