@@ -26,7 +26,7 @@ class Command(BaseCommand):
             'semifinal_ruled_out', 'final_qualified']
         self.actions = ['export', 'send', 'send_semifinal_qualified']
         self.templates = ['start_contest', 'end_qualifications',
-            'semifinal_not_qualified']
+            'semifinal_not_qualified', 'final_qualified']
 
     def add_arguments(self, parser):
         parser.add_argument('--query', default='test', choices=self.queries,
