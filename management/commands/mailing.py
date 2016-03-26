@@ -1,4 +1,5 @@
 import collections
+
 import csv
 import sys
 import traceback
@@ -22,7 +23,7 @@ class Command(BaseCommand):
     def __init__(self, *args, **kwargs):
         super().__init__(args, kwargs)
         self.queries = ['all', 'test', 'exclude-pattern', 'semifinal_qualified',
-            'semifinal_ruled_out']
+            'semifinal_ruled_out', 'final_qualified']
         self.actions = ['export', 'send', 'send_semifinal_qualified']
         self.templates = ['start_contest', 'end_qualifications',
             'semifinal_not_qualified']
@@ -70,6 +71,9 @@ class Command(BaseCommand):
         elif options['query'] == 'semifinal_ruled_out':
             query = query.filter(contestants__edition__year=2016,
                 contestants__assignation_semifinal=Assignation.ruled_out.value)
+        elif options['query'] == 'final_qualified':
+            query = query.filter(contestants__edition__year=2016,
+                contestants__assignation_final=Assignation.assigned.value)
 
         if options['action'] == 'send_semifinal_qualified':
             query = query.filter(contestants__edition__year=2016,
