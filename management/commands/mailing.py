@@ -7,6 +7,7 @@ import traceback
 from django.conf import settings
 from django.contrib.auth import get_user_model
 from django.core.management.base import BaseCommand
+from django.db.models import Q
 from django.template import Template, Context
 from django.utils import translation
 from djmail.models import Message, STATUS_SENT
@@ -23,7 +24,7 @@ class Command(BaseCommand):
     def __init__(self, *args, **kwargs):
         super().__init__(args, kwargs)
         self.queries = ['all', 'test', 'exclude-pattern', 'semifinal_qualified',
-            'semifinal_ruled_out', 'final_qualified']
+            'semifinal_ruled_out', 'final_qualified', 'final_not_qualified']
         self.actions = ['export', 'send', 'send_semifinal_qualified']
         self.templates = ['start_contest', 'end_qualifications',
             'semifinal_not_qualified', 'final_qualified']
@@ -74,6 +75,12 @@ class Command(BaseCommand):
         elif options['query'] == 'final_qualified':
             query = query.filter(contestants__edition__year=2016,
                 contestants__assignation_final=Assignation.assigned.value)
+        elif options['query'] == 'final_not_qualified':
+            query = query.filter(
+                Q(contestants__assignation_final=Assignation.ruled_out.value) |
+                Q(contestants__assignation_final=Assignation.not_assigned.value),
+                contestants__edition__year=2016,
+                contestants__assignation_semifinal=Assignation.assigned.value)
 
         if options['action'] == 'send_semifinal_qualified':
             query = query.filter(contestants__edition__year=2016,
