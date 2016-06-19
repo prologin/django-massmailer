@@ -1,0 +1,143 @@
+{% extends "prologin/base.html" %}
+{% load i18n staticfiles %}
+{% load bootstrap django_bootstrap_breadcrumbs %}
+
+{% block title %}{% if template %}{{ template.name }}{% else %}{% trans "New template" %}{% endif %} – {% trans "Mailing" %}{% endblock %}
+
+{% block extra_head %}
+  <link rel="stylesheet" type="text/css" href="{% static 'lib/css/select2.min.css' %}">
+  <link rel="stylesheet" type="text/css" href="{% static 'mailing/mailing.css' %}">
+{% endblock %}
+
+{% block breadcrumbs %}
+  {{ block.super }}
+  {% breadcrumb_for 'mailing:dashboard' %}{% trans "Mailing" %}{% endbreadcrumb_for %}
+  {% breadcrumb_for 'mailing:dashboard' %}{% trans "Templates" %}{% endbreadcrumb_for %}
+  {% if template %}
+  {% breadcrumb_for 'mailing:template:update' %}{{ template.name }}{% endbreadcrumb_for %}
+  {% else %}
+  {% breadcrumb_for 'mailing:template:new' %}{% trans "New template" %}{% endbreadcrumb_for %}
+  {% endif %}
+{% endblock %}
+
+{% block content %}
+
+  {% if template %}
+  <h1>{% blocktrans with name=template.name %}Update template {{ name }}{% endblocktrans %}</h1>
+  {% else %}
+  <h1>{% trans "New template" %}</h1>
+  {% endif %}
+
+  {% if form.non_field_errors %}
+    <div class="alert alert-danger">
+        <a class="close" data-dismiss="alert">&times;</a>
+        {% for non_field_error in form.non_field_errors %}
+          {{ non_field_error }}
+        {% endfor %}
+    </div>
+  {% endif %}
+
+  <form class="form" method="post" id="editor-form">
+    {% csrf_token %}
+    {{ form.revisions }}
+    <div class="row">
+      <div class="col-md-6">
+        <h2>{% trans "Template" %}</h2>
+        {{ form.name|bootstrap }}
+        {{ form.description|bootstrap }}
+        {{ form.html_enabled|bootstrap }}
+      </div>
+
+      <div class="col-md-6">
+        <h2>{% trans "Preview with query" %}</h2>
+        {{ form.useful_queries|bootstrap }}
+      {% comment %}
+      {% if template.useful_queries.all %}
+        <p>
+        {% for query in template.useful_queries.all %}
+          <a href="{{ query.get_absolute_url }}" class="btn btn-default btn-xs">{{ query.name }}</a>
+        {% endfor %}
+        </p>
+      {% endif %}{% endcomment %}
+        {# TODO #}
+      </div>
+    </div>
+
+    <div class="row">
+      <div class="col-md-6">
+        {{ form.subject|bootstrap }}
+        <p id="preview-subject-error" class="text-danger"></p>
+        {{ form.plain_body|bootstrap }}
+        <p id="preview-plain-error" class="text-danger"></p>
+        {{ form.use_markdown|bootstrap }}
+        {{ form.html_body|bootstrap }}
+        <p id="preview-html-error" class="text-danger"></p>
+        <button type="submit" class="btn btn-primary"><i class="fa fa-save"></i> {% trans "Save template" %}</button>
+      </div>
+
+      <div class="col-md-6">
+        <h2>{% trans "Preview" %}</h2>
+        <div>
+          <ul class="nav nav-tabs" role="tablist">
+            <li role="presentation" class="active">
+              <a href="#preview-plain" aria-controls="preview-plain" role="tab"
+                 data-toggle="tab">{% trans "Plaintext" %}</a></li>
+            <li role="presentation">
+              <a href="#preview-html" aria-controls="preview-html" role="tab"
+                 data-toggle="tab">{% trans "HTML" %}</a></li>
+            <li class="pull-right">
+              <div class="input-group" style="width: 190px">
+                <span class="input-group-btn">
+                  <button type="button" class="btn btn-default" id="btn-page-previous">
+                    <i class="fa fa-angle-left"></i></button>
+                </span>
+                <input type="search" id="search-input" class="form-control" placeholder="{% trans "Search" %}"/>
+                <span class="input-group-btn">
+                  <button type="button" class="btn btn-default" id="btn-page-next">
+                    <i class="fa fa-angle-right"></i></button>
+                </span>
+              </div>
+            </li>
+            <li class="pull-right" style="line-height: 34px; padding-right: 1em">
+              <input type="number" min="1" id="result-page" style="width: 4em; text-align: right; border: none; outline: none; background: none">
+              / <span id="result-count"></span>
+            </li>
+          </ul>
+          <div class="tab-content">
+            <div role="tabpanel" class="tab-pane active" id="preview-plain">
+              <div class="preview-content">
+                <code>Subject: <span class="preview-subject-content"></span></code>
+                <hr>
+                <pre id="preview-plain-content"></pre>
+              </div>
+            </div>
+            <div role="tabpanel" class="tab-pane" id="preview-html">
+              <div class="preview-content">
+                Subject: <span class="preview-subject-content"></span>
+                <hr>
+                <div id="preview-html-content"></div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </form>
+
+{% endblock %}
+
+{% block extra_script %}
+  <script type="text/javascript">
+    var PREVIEW_URL = '{% url 'mailing:template:preview' %}';
+  </script>
+  <script type="text/javascript" charset="utf-8" src="{% static 'js/utils.js' %}"></script>
+  <script type="text/javascript" charset="utf-8" src="{% static 'lib/js/select2.min.js' %}"></script>
+  <script type="text/javascript" charset="utf-8"
+          src="{% static 'problems/lib/ace/src-min-noconflict/ace.js' %}"></script>
+  <script type="text/javascript" charset="utf-8"
+          src="{% static 'problems/lib/ace/src-min-noconflict/ext-themelist.js' %}"></script>
+  <script type="text/javascript" charset="utf-8"
+          src="{% static 'problems/lib/ace/src-min-noconflict/ext-language_tools.js' %}"></script>
+  <script type="text/javascript" charset="utf-8" src="{% static 'mailing/template-editor.js' %}"></script>
+{% endblock %}

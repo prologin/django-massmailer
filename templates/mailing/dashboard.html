@@ -1,0 +1,62 @@
+{% extends "prologin/base.html" %}
+{% load i18n staticfiles %}
+{% load django_bootstrap_breadcrumbs %}
+
+{% block title %}{% trans "Dashboard" %} – {% trans "Mailing" %}{% endblock %}
+
+{% block breadcrumbs %}
+  {{ block.super }}
+  {% breadcrumb_for 'mailing:dashboard' %}{% trans "Mailing" %}{% endbreadcrumb_for %}
+  {% breadcrumb_for '' %}{% trans "Dashboard" %}{% endbreadcrumb_for %}
+{% endblock %}
+
+{% block content %}
+
+  <h1>{% trans "Mailing dashboard" %}</h1>
+
+  <div class="row">
+    <div class="col-md-6">
+      <a href="{% url 'mailing:template:new' %}" class="btn btn-info pull-right">
+        <i class="fa fa-envelope"></i> {% trans "Craft a new template" %}
+      </a>
+      <h2 class="heading-btn">{% trans "Templates" %}</h2>
+      <div class="list-group">
+      {% for template in templates %}
+          <a href="{{ template.get_absolute_url }}" class="list-group-item">
+            <span class="badge" title="{% trans "Related useful queries" %}"><i class="fa fa-database"></i> {{ template.query_count }}</span>
+            {% if template.html_enabled %}<span class="badge" title="{% trans "Plaintext + HTML" %}"><i class="fa fa-code"></i></span>{% endif %}
+            <h4 class="list-group-item-heading">
+              <i class="fa fa-envelope-o"></i> {{ template.name }}
+            </h4>
+            <p class="list-group-item-text text-muted single-line"><small>{{ template.subject_preview|safe }}</small></p>
+          </a>
+      {% empty %}
+        <p class="text-muted list-group-item"><i class="fa fa-frown-o"></i> <em>{% trans "There is no template yet." %}</em></p>
+      {% endfor %}
+      </div>
+    </div>
+
+    <div class="col-md-6">
+      <a href="{% url 'mailing:query:new' %}" class="btn btn-info pull-right">
+        <i class="fa fa-database"></i> {% trans "Craft a new query" %}
+      </a>
+      <h2 class="heading-btn">{% trans "Queries" %}</h2>
+      <div class="list-group">
+      {% for query in queries %}
+        <a href="{{ query.get_absolute_url }}" class="list-group-item">
+          <span class="badge" title="{% trans "Templates this query is useful for" %}"><i class="fa fa-envelope-o"></i> {{ query.template_count }}</span>
+          <h4 class="list-group-item-heading">
+            <i class="fa fa-database"></i> {{ query.name }}
+          </h4>
+          <p class="list-group-item-text text-muted single-line">
+            <small>{{ query.description }}</small>
+          </p>
+        </a>
+      {% empty %}
+        <p class="text-muted list-group-item"><i class="fa fa-frown-o"></i> <em>{% trans "There is no query yet." %}</em></p>
+      {% endfor %}
+      </div>
+    </div>
+  </div>
+
+{% endblock %}
