@@ -6,11 +6,12 @@ import jinja2.meta
 import jinja2.runtime
 import re
 from django.contrib.auth import get_user_model
+from django.core.exceptions import FieldDoesNotExist
 from django.core.urlresolvers import reverse
 from django.db import models
 from django.utils.text import ugettext_lazy as _, slugify
 
-from mailing.query_parser import parse_query
+from mailing.query_parser import parse_query, ParseError
 
 TEMPLATE_OPTS = {'autoescape': False,
                  'trim_blocks': True,
@@ -126,5 +127,32 @@ class Query(models.Model):
     def get_absolute_url(self):
         return reverse('mailing:query:update', kwargs={'id': self.pk, 'slug': slugify(self.name)})
 
-    def execute(self):
-        return parse_query(self.query, get_user_model())
+    def get_results(self):
+        return self.execute(self.query)
+
+    @staticmethod
+    def execute(query):
+        User = get_user_model()
+        user_label = User._meta.label
+
+        result = parse_query(query)
+        qs = result.queryset
+        qs_label = qs.model._meta.label
+
+        user_qs = qs
+        # if queryset is not a User queryset, require a "user" alias
+        if user_qs.model != User:
+            if 'user' not in result.aliases:
+                raise ParseError(_("The root model is not %(model)s. You must provide a `user` alias.") %
+                                 {'model': user_label})
+            user_field = result.aliases['user']
+            try:
+                if qs.model._meta.get_field(user_field).related_model != User:
+                    raise ParseError(_("%(label)s.%(field)s is not %(model)s") %
+                                     {'label': qs_label, 'field': user_field, 'model': user_label})
+            except FieldDoesNotExist:
+                raise ParseError(_("%(label)s has no field `%(field)s`" % {'label': qs_label, 'field': user_field}))
+            user_pks = set(qs.values_list(user_field, flat=True))
+            user_qs = User._default_manager.filter(pk__in=user_pks)
+
+        return result, user_qs

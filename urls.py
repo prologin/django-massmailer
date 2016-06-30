@@ -11,7 +11,6 @@ template_patterns = [
 
 query_patterns = [
     url(r'^$', mailing.views.CreateQueryView.as_view(), name='new'),
-    url(r'^context/$', mailing.views.QueryContextView.as_view(), name='context'),
     url(r'^preview/$', mailing.views.QueryPreviewView.as_view(), name='preview'),
     url(r'^(?P<id>[0-9]+)/', mailing.views.UpdateQueryView.as_view(), name='update'),
     url(r'^(?P<id>[0-9]+)\-(?P<slug>[\w_-]+)/', mailing.views.UpdateQueryView.as_view(), name='update'),

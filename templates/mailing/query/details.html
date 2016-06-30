@@ -53,43 +53,115 @@
       <div class="col-md-6">
         <h2>{% trans "Preview" %}</h2>
 
-        <div class="panel panel-default">
-          <div class="panel-heading">
-            {% trans "Stats" %}
+        <div id="result-stats">
+          <div class="stat-row">
+            <div class="title">{% blocktrans %}<code class="result-model"></code> count{% endblocktrans %}</div>
+            <div class="value"><code id="result-count"></code></div>
           </div>
-          <div class="panel-body">
-            {% trans "Result count:" %} <code id="result-count"></code>
+          <div class="stat-row">
+            <div class="title">{% trans "Unique user count" %}</div>
+            <div class="value"><code id="result-user-count"></code></div>
+          </div>
+          <div class="stat-row">
+            <div class="title">{% blocktrans %}<code class="result-model"></code> accessible by{% endblocktrans %}</div>
+            <div class="value"><code id="result-model-name"></code></div>
+          </div>
+          <div class="stat-row">
+            <div class="title">{% trans "Available aliases" %}</div>
+            <div class="value"><ul id="result-aliases"></ul></div>
           </div>
         </div>
+
+        <div class="panel panel-default" id="result-wrap">
+          <div class="input-group" id="result-pager">
+            <span class="input-group-btn">
+              <button type="button" class="btn btn-default" id="btn-page-previous">
+                <i class="fa fa-angle-left"></i></button>
+            </span>
+            <input type="number" id="result-page" class="form-control">
+                <span class="input-group-btn">
+                  <button type="button" class="btn btn-default" id="btn-page-next">
+                    <i class="fa fa-angle-right"></i></button>
+                </span>
+          </div>
+          <div class="panel-body">
+            <div class="text-danger" id="result-error"></div>
+            <table id="result-data" class="table table-striped small">
+              <tbody></tbody>
+            </table>
+          </div>
+        </div>
+
         <div class="panel-group" id="accordion" role="tablist" aria-multiselectable="true">
           <div class="panel panel-default">
-            <div class="panel-heading" role="tab" id="headingOne">
+            <div class="panel-heading" role="tab">
               <h4 class="panel-title">
-                <a role="button" data-toggle="collapse" data-parent="#accordion" href="#wrap-result-sql"
-                   aria-expanded="true" aria-controls="wrap-result-sql">
+                <a role="button" data-toggle="collapse" data-parent="#accordion" href="#wrap-result-sql">
                   {% trans "Generated SQL query" %}
                 </a>
               </h4>
             </div>
-            <div id="wrap-result-sql" class="panel-collapse collapse" role="tabpanel" aria-labelledby="headingOne">
+            <div id="wrap-result-sql" class="panel-collapse collapse" role="tabpanel">
               <pre class="panel-body panel-pre" id="result-sql" style="white-space: pre-wrap;"></pre>
             </div>
           </div>
           <div class="panel panel-default">
-            <div class="panel-heading" role="tab" id="headingOne">
+            <div class="panel-heading" role="tab">
               <h4 class="panel-title">
-                <a role="button" data-toggle="collapse" data-parent="#accordion" href="#wrap-result-data"
-                   aria-expanded="true" aria-controls="wrap-result-data">
-                  {% trans "Results" %}
+                <a role="button" data-toggle="collapse" data-parent="#accordion" href="#wrap-syntax-guide">
+                  {% trans "Syntax guide & shortcuts" %}
                 </a>
               </h4>
             </div>
-            <div id="wrap-result-data" class="panel-collapse collapse in" role="tabpanel" aria-labelledby="headingOne">
-              <pre class="panel-body panel-pre" id="result-data"></pre>
+            <div id="wrap-syntax-guide" class="panel-collapse collapse" role="tabpanel">
+              <div class="panel-body">
+                <p>{% blocktrans %}Filters are implicity joined by the <code>and</code> operator.
+  If you are not querying on the <code>ProloginUser</code> model directly, you must create a
+  <code>user</code>
+  alias targeting a field containing the related user.{% endblocktrans %}</p>
+                  <pre>SomeModel [as name]
+  .field = 42
+  (.field contains "string" or
+   .field contains i"case insensitive")
+  count(.related_field) > 10
+
+alias some_name = .some_field</pre>
+                <dl>
+                <dt>{% trans "Available models" %}</dt>
+                <dd>
+                {% for model in available_models %}
+                  <span class="ins-model btn btn-{% if model.user_field %}info{% elif model.is_user %}primary{% else %}default{% endif %} btn-xs"
+                        data-alias="{% if not model.is_user and model.user_field %}{{ model.user_field }}{% endif %}"
+                        data-clsname="{{ model.cls_name }}"
+                        title="{{ model.label }}">{{ model.name }}</span>
+                {% endfor %}
+                </dd>
+                <dt>{% trans "Available enumerations" %}</dt>
+                <dd>
+                {% for enum in available_enums %}
+                  <div class="dropdown ins-enum" style="display: inline-block">
+                    <button class="btn btn-default btn-xs dropdown-toggle" type="button"
+                            data-toggle="dropdown" aria-haspopup="true" aria-expanded="true">
+                      {{ enum.name }}
+                      <span class="caret"></span>
+                    </button>
+                    <ul class="dropdown-menu">
+                      {% for member in enum.members %}<li><a href="#">{{ member }}</a></li>{% endfor %}
+                    </ul>
+                  </div>
+                {% endfor %}
+                </dd>
+                <dt>{% trans "Available functions" %}</dt>
+                <dd>
+                {% for func in available_funcs %}
+                  <span class="ins-func btn btn-default btn-xs" title="{{ func.doc }}">{{ func.name }}</span>
+                {% endfor %}
+                </dd>
+                </dl>
+              </div>
             </div>
           </div>
         </div>
-
       </div>
     </div>
   </form>

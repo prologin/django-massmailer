@@ -1,3 +1,4 @@
+import re
 from django.apps import apps
 from django.db.models import Func
 from django.db.models import Q
@@ -5,9 +6,21 @@ from prologin.models import BaseEnumField
 import ast
 import pyparsing as p
 
+from prologin.utils import LazyDict
+
+
+class ParseError(ValueError):
+    pass
+
 
 class CaseInsensitive(str):
     pass
+
+
+class ParseResult:
+    queryset = None
+    model_name = None
+    aliases = {}
 
 
 def find_funcs(cls):
@@ -21,22 +34,24 @@ def find_funcs(cls):
     return found
 
 
-class LazyEnums:
-    enums = {}
-
-    def __getitem__(self, item):
-        if not self.enums:
-            self.enums = {'{}.{}'.format(model.__name__, field._enum.__name__): field._enum
-                          for model in apps.get_models()
-                          for field in model._meta.fields if isinstance(field, BaseEnumField)}
-        return self.enums[item]
+class LazyEnums(LazyDict):
+    def __wakeup__(self):
+        return {'{}.{}'.format(model.__name__, field._enum.__name__): field._enum
+                for model in apps.get_models()
+                for field in model._meta.fields if isinstance(field, BaseEnumField)}
 
 
-available_funcs = find_funcs(Func)
+class LazyModels(LazyDict):
+    def __wakeup__(self):
+        return {model.__name__: model for model in apps.get_models()}
+
+
 available_enums = LazyEnums()
+available_funcs = find_funcs(Func)
+available_models = LazyModels()
 
 
-def parse_query(query, fallback_model=None):
+def parse_query(query: str) -> ParseResult:
     func_i = 0
 
     def parse_enum(tokens):
@@ -44,7 +59,7 @@ def parse_query(query, fallback_model=None):
         try:
             enum = available_enums[enum]
         except KeyError:
-            raise SyntaxError("unknown enum '{}'".format(enum))
+            raise ParseError("unknown enum '{}'".format(enum))
         try:
             # try with member name
             member = enum[member]
@@ -53,7 +68,7 @@ def parse_query(query, fallback_model=None):
             try:
                 member = enum(member)
             except ValueError:
-                raise SyntaxError("invalid member '{}' of {}".format(member, enum))
+                raise ParseError("invalid member '{}' of {}".format(member, enum))
         return member.value
 
     def parse_string(tokens):
@@ -123,7 +138,7 @@ def parse_query(query, fallback_model=None):
             field += '__range'
             value = (tokens['min'], tokens['max'])
         else:
-            raise SyntaxError("unknown clause token {}".format(tokens))
+            raise ParseError("unknown clause token {}".format(tokens))
 
         q = Q(**{field: value})
         if negation:
@@ -145,8 +160,6 @@ def parse_query(query, fallback_model=None):
                     operation = token
                 elif token == 'not':
                     negation = True
-                else:
-                    raise SyntaxError("unknown op {}".format(token))
             else:
                 q, ann = token
                 annotations.update(ann)
@@ -159,20 +172,26 @@ def parse_query(query, fallback_model=None):
         return query, annotations
 
     def parse_model(tokens):
-        return {model.__name__: model for model in apps.get_models()}[tokens['model']]
+        return available_models[tokens['model']]
 
     def parse(tokens):
         query, annotations = tokens.get('filter', (Q(), {}))
-        qs = tokens['model']._default_manager.annotate(**annotations).filter(query)
-        using = tokens.get('using')
-        if using:
-            if not fallback_model:
-                raise ValueError("`fallback_model` must be defined to use `using`")
-            qs = fallback_model._default_manager.filter(pk__in=qs.values_list(using, flat=True))
-        return qs
+        model = tokens['model']
+        model_name = model._meta.model_name
+        qs = model._default_manager.annotate(**annotations).filter(query)
+        custom_model_name = tokens.get('model_name')
+        if custom_model_name:
+            model_name = custom_model_name[0]
+        result = ParseResult()
+        result.queryset = qs
+        result.model_name = model_name
+        result.aliases = {name: field for name, field in tokens.get('aliases', [])}
+        result.aliases.pop(model_name, None)
+        return result
 
     # The grammar
     # TODO: implement operation args eg. substr(.field, 1, 5)
+    comments = p.Suppress(p.ZeroOrMore(p.pythonStyleComment))
     point = p.Literal('.')
     expo = p.CaselessLiteral('e')
     plusorminus = p.Literal('+') | p.Literal('-')
@@ -184,14 +203,14 @@ def parse_query(query, fallback_model=None):
     hexnumber = p.Combine(p.Optional(plusorminus) + p.CaselessLiteral('0x') + p.Word(p.hexnums))
     numscalar = (hexnumber | floatnumber | integer).setParseAction(lambda t: ast.literal_eval(t[0]))
     boolean = (p.Keyword('true') | p.Keyword('false')).setParseAction(lambda t: t[0].lower() == 'true')
-    alpha_under = p.Word(p.alphanums + '_')
+    alpha_under = p.Regex(r'[a-z][a-z0-9]*(_[a-z0-9]+)*', re.I)
     enumvalue = p.Combine(alpha_under + '.' + alpha_under + '.' + alpha_under).setParseAction(parse_enum)
     string = (p.Optional(p.Literal('i')).setResultsName('nocase') +
               p.quotedString.setParseAction(p.removeQuotes).setResultsName('string')).setParseAction(parse_string)
     value = ((string | numscalar | boolean | enumvalue)
              .setResultsName('value'))
     model = p.Regex(r'([A-Z][a-z0-9]*)+').setParseAction(parse_model).setResultsName('model')
-    field_name = (p.OneOrMore(p.Suppress('.') + p.Regex(r'[a-zA-Z]+(_[a-zA-Z0-9]+)*'))
+    field_name = (p.OneOrMore(p.Suppress('.') + alpha_under)
                   .setParseAction(parse_field).setResultsName('field'))
     operation = ((p.Word(p.alphas).setResultsName('func_name') +
                   p.Suppress('(') + field_name.setResultsName('func_field') + p.Suppress(')'))
@@ -227,13 +246,24 @@ def parse_query(query, fallback_model=None):
     oper_not = p.Keyword('not')
     oper_and = p.Keyword('and')
     oper_or = p.Keyword('or')
-    filter = p.operatorPrecedence(clause, [
+    filter = p.operatorPrecedence(clause + comments, [
         (oper_not, 1, p.opAssoc.RIGHT),
         (oper_or, 2, p.opAssoc.LEFT),
         (p.Optional(oper_and, default='and'), 2, p.opAssoc.LEFT),
     ]).setParseAction(parse_filter)
-    stmt = (p.stringStart() + model + p.Optional(filter).setResultsName('filter') +
-            p.Optional(p.Keyword('using') + field_name.setResultsName('using')) +
+    alias = (p.Keyword('alias') +
+             alpha_under.setResultsName('name') +
+             p.Optional(p.Suppress('=') + field_name.setResultsName('field')) +
+             comments).setParseAction(lambda t: (t['name'], t.get('field', t['name'])))
+    stmt = (p.stringStart() +
+            comments +
+            model +
+            p.Optional((p.Suppress(p.Keyword('as')) + alpha_under)).setResultsName('model_name') +
+            comments +
+            p.Optional(filter).setResultsName('filter') +
+            comments +
+            p.ZeroOrMore(alias).setResultsName('aliases') +
+            comments +
             p.StringEnd()).setParseAction(parse)
 
     return stmt.parseString(query)[0]

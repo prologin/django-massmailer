@@ -31,3 +31,52 @@
   content: normal;
   display: none;
 }
+
+#result-stats {
+  margin: 1em 0;
+  width: 100%;
+}
+#result-stats .stat-row {
+  display: table;
+  border-top: 1px solid #ccc;
+  width: 100%;
+}
+#result-stats .title, #result-stats .value {
+  display: table-cell;
+  padding: 6px;
+}
+#result-stats .value {
+  text-align: right;
+}
+
+#result-aliases {
+  list-style: none;
+}
+
+#result-aliases li {
+  display: inline-block;
+  margin: 0 0 4px 4px;
+}
+
+#result-aliases li code {
+  white-space: nowrap;
+}
+
+#result-wrap {
+  position: relative;
+}
+#result-wrap .panel-body {
+  overflow: hidden;
+}
+
+#result-pager {
+  position: absolute;
+  width: 190px;
+  top: -18px;
+  left: calc(50% - 190px/2);
+}
+
+#result-data {
+  margin-top: 1em;
+  margin-bottom: 0;
+}
