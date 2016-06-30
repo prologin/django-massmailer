@@ -66,14 +66,8 @@
         // return submits the non existent form -_-
         if (e.keyCode === 13) e.preventDefault();
       });
-    var $search_input = $('#search-input');
-    $search_input.on('keyup', debounce(function () {
-      page = 0;
-      preview();
-    }, 500));
 
     function preview() {
-      $search_input.prop('disabled', query_id == null);
       $page_buttons.prop('disabled', query_id == null);
       $result_page.parent().hide();
       $result_count.val('');
@@ -86,7 +80,6 @@
         wrap_columns: $wrap_columns.val(),
         query: query_id,
         page: page,
-        search: $search_input.val(),
         subject: subject_editor.getSession().getDocument().getValue(),
         plain: plain_editor.getSession().getDocument().getValue(),
         html: html_editor.getSession().getDocument().getValue(),
@@ -96,7 +89,6 @@
           page = data.query.page;
           $result_count.text(count);
           $result_page.parent().toggle(!!count);
-          $search_input.parent().toggleClass('has-warning', !count);
           $page_previous.prop('disabled', page <= 0);
           $page_next.prop('disabled', page >= count - 1);
           if (!count) {
