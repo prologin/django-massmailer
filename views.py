@@ -31,7 +31,7 @@ from users.models import search_users
 
 
 class MailingPermissionMixin(PermissionRequiredMixin):
-    permission_required = 'dashboard.admin'
+    permission_required = 'mailing.admin'
 
 
 class ObjectByIdMixin:
