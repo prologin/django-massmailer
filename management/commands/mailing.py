@@ -2,99 +2,125 @@ import collections
 
 import csv
 import sys
+import os
 import traceback
 
 from django.conf import settings
-from django.contrib.auth import get_user_model
-from django.core.management.base import BaseCommand
-from django.db.models import Q
-from django.template import Template, Context
+from django.core.management.base import BaseCommand, CommandError
 from django.utils import translation
-from djmail.models import Message, STATUS_SENT
 
-from contest.models import Assignation
 from documents.models import generate_tex_pdf
 from prologin.email import send_email
 import contest.models
+import mailing.models
 
 
 class Command(BaseCommand):
-    help = "Get e-mails and required attributes of users from a request"
+    help = "Send predefined email templates to users selected by a predefined query"
 
     def __init__(self, *args, **kwargs):
         super().__init__(args, kwargs)
-        self.queries = ['all', 'test', 'exclude-pattern', 'semifinal_qualified',
-            'semifinal_ruled_out', 'final_qualified', 'final_not_qualified']
-        self.actions = ['export', 'send', 'send_semifinal_qualified']
-        self.templates = ['start_contest', 'end_qualifications',
-            'semifinal_not_qualified', 'final_qualified', 'final_not_qualified']
+        self.actions = ['list-templates', 'list-queries', 'send']
 
     def add_arguments(self, parser):
-        parser.add_argument('--query', default='test', choices=self.queries,
-                            help='The query to use among: {}'.format(self.queries))
-        parser.add_argument('--pattern', default=None,
-                            help='The pattern to search for in body text, for --query exclude-pattern')
-        parser.add_argument('--template', default=None, choices=self.templates,
-                            help='The template to use among: {}'.format(self.templates))
-        parser.add_argument('--dry', action='store_true',
-                            help='Do not actually send the mails.')
-        parser.add_argument('--force-all', action='store_true',
-                            help='Even for users who did not check the Allow Mailing box')
-        parser.add_argument('--fields', default='email',
-                            help='The model fields wanted in the export separated by commas')
-
-        parser.add_argument('action', help='Action to use among: [{}]'.format(self.actions))
+        subparsers = parser.add_subparsers(help='command to launch', dest='cmd')
+        subparsers.required = True  # Python consistency.
+        subparsers.add_parser('list-queries', help='list queries', cmd=self)
+        subparsers.add_parser('list-templates', help='list templates', cmd=self)
+        send = subparsers.add_parser('send', help='send mailing', cmd=self)
+        send.add_argument('-q', '--query', required=True, help='the query ID to use')
+        send.add_argument('-t', '--template', required=True, help='the template ID to use')
+        send.add_argument('-f', '--force', action='store_true', help='skip the screen/tmux check')
+        send.add_argument('-n', '--dry-run', action='store_true',
+                          help='do not actually send the mails')
 
     def handle(self, *args, **options):
-        query = get_user_model().objects.all()
-        if not options['force_all']:
-            query = query.filter(allow_mailing=True)
-        else:
-            if (input('Warning: users who do not want to receive mails ARE '
-                      'INCLUDED in this list. Type "This is fine" to confirm: '
-                      ).lower() != 'this is fine'):
-                self.stderr.write('error: wrong answer.')
-                sys.exit(1)
+        getattr(self, 'handle_%s' % options['cmd'].replace('-', '_'))(*args, **options)
 
-        # TODO(halfr): refactor
-        if options['query'] == 'all':
-            pass
-        # TODO(halfr): remove legacy
-        elif options['query'] == 'exclude-pattern':
-            if not options['pattern']:
-                self.stderr.write("--pattern option is required")
-                sys.exit(1)
-            already_sent = Message.objects.filter(status=STATUS_SENT, body_text__icontains=options['pattern'])
-            already_sent = set(already_sent.values_list('to_email', flat=True))
-            query = query.exclude(email__in=already_sent)
-        elif options['query'] == 'test':
-            query = query.filter(email='association+test@prologin.org')
-        elif options['query'] == 'semifinal_ruled_out':
-            query = query.filter(contestants__edition__year=2016,
-                contestants__assignation_semifinal=Assignation.ruled_out.value)
-        elif options['query'] == 'final_qualified':
-            query = query.filter(contestants__edition__year=2016,
-                contestants__assignation_final=Assignation.assigned.value)
-        elif options['query'] == 'final_not_qualified':
-            query = query.filter(
-                Q(contestants__assignation_final=Assignation.ruled_out.value) |
-                Q(contestants__assignation_final=Assignation.not_assigned.value),
-                contestants__edition__year=2016,
-                contestants__assignation_semifinal=Assignation.assigned.value)
+    def print_list(self, iterable, width=4):
+        self.stdout.write('─' * width + '─╮')
+        item = None
+        while True:
+            item = item or next(iterable, None)
+            if item:
+                pk, error, lines = item
+                ((self.stderr if error else self.stdout)
+                 .write("\n".join("{pk:>{w}} │ {l}".format(pk=pk if i == 0 else "", w=width, l=line)
+                                  for i, line in enumerate(lines))))
+                item = next(iterable, None)
+                if item:
+                    self.stdout.write('─' * width + '─┤')
+                else:
+                    break
+        self.stdout.write('─' * width + '─╯')
 
-        if options['action'] == 'send_semifinal_qualified':
-            query = query.filter(contestants__edition__year=2016,
-                contestants__assignation_semifinal=Assignation.assigned.value)
+    def handle_list_queries(self, *args, **options):
+        def queries():
+            for query in mailing.models.Query.objects.all():
+                try:
+                    parsed = query.parse()
+                except Exception:
+                    error = True
+                    aliases = "invalid query"
+                else:
+                    error = False
+                    aliases = "Aliases: {}".format(", ".join(parsed.aliases.keys()))
+                yield (
+                    query.pk, error, (query.name, query.description.replace("\n", "").replace("\r", "")[:80], aliases))
 
-        if not query.count():
-            self.stderr.write('error: query returned no result')
-            sys.exit(1)
+        self.print_list(queries())
 
-        action = options['action']
-        if action not in self.actions:
-            self.stderr.write('error: action unknown: {}'.format(action))
-            sys.exit(1)
-        getattr(self, action)(query, *args, **options)
+    def handle_list_templates(self, *args, **options):
+        def templates():
+            for template in mailing.models.Template.objects.all().prefetch_related('useful_queries'):
+                useful = "Useful with queries: {}".format(
+                    ", ".join(str(pk) for pk in template.useful_queries.values_list('pk', flat=True)))
+                yield (template.pk, False, (template.name,
+                                            template.description.replace("\n", "").replace("\r", "")[:80],
+                                            useful))
+
+        self.print_list(templates())
+
+    def handle_send(self, *args, **options):
+        if not options['force']:
+            self.check_tmux()
+
+        try:
+            query = mailing.models.Query.objects.get(pk=options['query'])
+        except mailing.models.Query.DoesNotExist:
+            raise CommandError("This query ID does not exist")
+        try:
+            template = mailing.models.Template.objects.get(pk=options['template'])
+        except mailing.models.Template.DoesNotExist:
+            raise CommandError("This template ID does not exist")
+        self.stdout.write("Using query: {}: {}".format(query.pk, query.name))
+        self.stdout.write("Using template: {}: {}".format(template.pk, template.name))
+
+        result, user_qs = query.get_results()
+        queryset = result.queryset.order_by('pk')
+        count = len(queryset)
+
+        if not options['dry_run']:
+            self.check_user_brain(len(queryset), len(user_qs))
+
+        for i, email in enumerate(mailing.models.build_emails(template, query), start=1):
+            addr = email.to[0]
+            self.stdout.write("{:>5}/{} To: {}".format(i, count, addr))
+            if options['dry_run']:
+                self.stdout.write("")
+                self.stdout.write("To: " + addr)
+                self.stdout.write("Subject: " + email.subject)
+                self.stdout.write(email.body)
+                self.stdout.write("-" * 79)
+            else:
+                try:
+                    email.send()
+                except:
+                    self.stderr.write(traceback.format_exc())
+
+    def check_tmux(self):
+        if not (os.environ.get('TMUX') or os.environ.get('STY')):
+            raise CommandError("This command has to be run in screen or tmux")
 
     def export(self, basequery, *args, **options):
         fields = options['fields'].split(',')
@@ -103,35 +129,15 @@ class Command(BaseCommand):
         for u in basequery:
             writer.writerow({f: getattr(u, f) for f in fields})
 
-    def check_user_brain(self, query):
-        msg = ('You are ACTUALLY sending a mail to {} people. '
-               'Type "This is fine" to confirm: '.format(len(query)))
-        if input(msg).lower() != 'this is fine':
-            self.stderr.write('error: wrong answer.')
-            sys.exit(1)
-
-    def send(self, basequery, *args, **options):
-        if options['template'] not in self.templates:
-            self.stderr.write('error: wrong or no template given.')
-            sys.exit(1)
-
-        self.check_user_brain(basequery)
-
-        for i, u in enumerate(basequery, 1):
-            self.stdout.write('Sending mail to "{}" <{}> ({} / {})'
-                              .format(u.username, u.email, i, len(basequery)))
-            if not options['dry']:
-                try:
-                    ctx = {'user': u, 'year': 2016,
-                           'train_url': settings.SITE_BASE_URL + '/train',
-                           'forum_url': settings.SITE_BASE_URL + '/forum',
-                    }
-                    send_email('mailing/{}'.format(options['template']),
-                               u.email, ctx)
-                except:
-                    traceback.print_exc()
+    def check_user_brain(self, mail_count, user_count):
+        msg = ('You are ACTUALLY sending {} mails to {} users. '
+               'Type "This is fine" to confirm: '.format(mail_count, user_count))
+        if input(msg).strip().lower() != 'this is fine':
+            raise CommandError('wrong answer')
 
     def send_semifinal_qualified(self, qualified, *args, **options):
+        # THIS FUNCTION IS BROKEN
+        # TODO: refactor this into something generic
         self.check_user_brain(qualified)
 
         # For date formatting in templates
