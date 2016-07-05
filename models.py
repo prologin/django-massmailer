@@ -6,6 +6,7 @@ import jinja2.meta
 import jinja2.runtime
 import re
 from django.contrib.auth import get_user_model
+from django.core import mail
 from django.core.exceptions import FieldDoesNotExist
 from django.core.urlresolvers import reverse
 from django.db import models
@@ -130,6 +131,9 @@ class Query(models.Model):
     def get_results(self):
         return self.execute(self.query)
 
+    def parse(self):
+        return parse_query(self.query)
+
     @staticmethod
     def execute(query):
         User = get_user_model()
@@ -156,3 +160,28 @@ class Query(models.Model):
             user_qs = User._default_manager.filter(pk__in=user_pks)
 
         return result, user_qs
+
+
+def build_emails(template: Template, query: Query, attachments=None):
+    User = get_user_model()
+    # TODO: attachments
+    result, user_qs = query.get_results()
+    queryset = result.queryset.order_by('pk')
+
+    if result.queryset.model is User:
+        user_getter = lambda object: object
+    else:
+        user_getter = lambda object: getattr(object, result.aliases['user'])
+
+    for object in queryset:
+        context = {alias: getattr(object, field) for alias, field in result.aliases.items()}
+        context[result.model_name] = object
+        user = user_getter(object)
+        email = mail.EmailMessage(
+            to=[user.email],
+            subject=template.render(TemplateItem.subject, context),
+            body=template.render(TemplateItem.plain, context),
+            # TODO: html
+            headers={'List-Unsubscribe': '<{}>'.format(user.get_unsubscribe_url())},
+        )
+        yield email
