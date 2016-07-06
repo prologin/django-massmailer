@@ -1,8 +1,8 @@
+import argparse
 import collections
-
 import csv
-import sys
 import os
+import sys
 import traceback
 
 from django.conf import settings
@@ -33,6 +33,8 @@ class Command(BaseCommand):
         send.add_argument('-f', '--force', action='store_true', help='skip the screen/tmux check')
         send.add_argument('-n', '--dry-run', action='store_true',
                           help='do not actually send the mails')
+        send.add_argument('--exclude', type=argparse.FileType('r'),
+                          help='file of newline-seperated emails to exclude from sending') 
 
     def handle(self, *args, **options):
         getattr(self, 'handle_%s' % options['cmd'].replace('-', '_'))(*args, **options)
@@ -96,6 +98,10 @@ class Command(BaseCommand):
         self.stdout.write("Using query: {}: {}".format(query.pk, query.name))
         self.stdout.write("Using template: {}: {}".format(template.pk, template.name))
 
+        exclusions = set()
+        if options.get('exclude'):
+            exclusions = {clean for mail in options.get('exclude')
+                          for clean in (mail.strip().lower(),) if clean}
         result, user_qs = query.get_results()
         queryset = result.queryset.order_by('pk')
         count = len(queryset)
@@ -104,7 +110,11 @@ class Command(BaseCommand):
             self.check_user_brain(len(queryset), len(user_qs))
 
         for i, email in enumerate(mailing.models.build_emails(template, query), start=1):
+            # TODO: compute exclusions *before* counting and building the mail
             addr = email.to[0]
+            if addr.lower() in exclusions:
+                self.stdout.write("{:>5}/{} Skipped: {}".format(i, count, addr))
+                continue
             self.stdout.write("{:>5}/{} To: {}".format(i, count, addr))
             if options['dry_run']:
                 self.stdout.write("")
