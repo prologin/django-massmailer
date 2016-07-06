@@ -51,13 +51,13 @@ class Command(BaseCommand):
             stats[ret] += 1
 
         print("\nStats:")
-        print("  Deactivated:         {}".format(
+        print("  Deactivated:         {:>6}".format(
             stats[DeactivateStatus.Deactivated]))
-        print("  Already deactivated: {}".format(
+        print("  Already deactivated: {:>6}".format(
             stats[DeactivateStatus.AlreadyDeactivated]))
-        print("  User not found:      {}".format(
+        print("  User not found:      {:>6}".format(
             stats[DeactivateStatus.UserNotFound]))
-        print("  Total:               {}".format(sum(stats.values())))
+        print("  Total:               {:>6}".format(sum(stats.values())))
 
     def from_maildir(self, dirname):
         """Get addresses from bouncing emails stored in ``dirname``"""
