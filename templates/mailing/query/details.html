@@ -1,6 +1,6 @@
 {% extends "prologin/base.html" %}
 {% load i18n staticfiles %}
-{% load bootstrap django_bootstrap_breadcrumbs %}
+{% load bootstrap django_bootstrap_breadcrumbs utils %}
 
 {% block title %}{% if query %}{{ query.name }}{% else %}{% trans "New query" %}{% endif %} – {% trans "Mailing" %}{% endblock %}
 
@@ -174,11 +174,11 @@ alias some_name = .some_field</pre>
   </script>
   <script type="text/javascript" charset="utf-8" src="{% static 'js/utils.js' %}"></script>
   <script type="text/javascript" charset="utf-8" src="{% static 'lib/js/select2.min.js' %}"></script>
-  <script type="text/javascript" charset="utf-8"
-          src="{% static 'problems/lib/ace/src-min-noconflict/ace.js' %}"></script>
-  <script type="text/javascript" charset="utf-8"
-          src="{% static 'problems/lib/ace/src-min-noconflict/ext-themelist.js' %}"></script>
-  <script type="text/javascript" charset="utf-8"
-          src="{% static 'problems/lib/ace/src-min-noconflict/ext-language_tools.js' %}"></script>
+  {# <script type="text/javascript" charset="utf-8" src="{% static 'problems/lib/ace/src-min-noconflict/ace.js' %}"></script> #}
+  <script type="text/javascript" charset="utf-8" src="{% get_setting 'STATIC_URL' %}/problems/lib/ace/src-min-noconflict/ace.js"></script>
+  {# <script type="text/javascript" charset="utf-8" src="{% static 'problems/lib/ace/src-min-noconflict/ext-themelist.js' %}"></script> #}
+  <script type="text/javascript" charset="utf-8" src="{% get_setting 'STATIC_URL' %}/problems/lib/ace/src-min-noconflict/ext-themelists.js"></script>
+  {# <script type="text/javascript" charset="utf-8" src="{% static 'problems/lib/ace/src-min-noconflict/ext-language_tools.js' %}"></script> #}
+  <script type="text/javascript" charset="utf-8" src="{% get_setting 'STATIC_URL' %}/problems/lib/ace/src-min-noconflict/ext-language_tools.js"></script>
   <script type="text/javascript" charset="utf-8" src="{% static 'mailing/query-editor.js' %}"></script>
 {% endblock %}
