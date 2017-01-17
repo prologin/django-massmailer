@@ -4,6 +4,7 @@ import bleach
 import jinja2
 import jinja2.meta
 import jinja2.runtime
+import locale
 import re
 from django.contrib.auth import get_user_model
 from django.core import mail
@@ -13,6 +14,7 @@ from django.db import models
 from django.utils.text import ugettext_lazy as _, slugify
 
 from mailing.query_parser import parse_query, ParseError
+from prologin.utils import override_locale
 
 TEMPLATE_OPTS = {'autoescape': False,
                  'trim_blocks': True,
@@ -65,7 +67,8 @@ class Template(models.Model):
         return jinja2.meta.find_undeclared_variables(ast)
 
     def render(self, item: TemplateItem, context: dict):
-        content = self.template(item).render(context)
+        with override_locale(locale.LC_TIME, 'fr_FR.UTF-8'):
+            content = self.template(item).render(context)
         if item is TemplateItem.html:
             content = bleach.linkify(content)
         return content
