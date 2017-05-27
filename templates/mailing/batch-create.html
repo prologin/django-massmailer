@@ -1,0 +1,20 @@
+{% extends "prologin/base.html" %}
+{% load i18n staticfiles %}
+{% load django_bootstrap_breadcrumbs crispy_forms_tags %}
+
+{% block title %}{% trans "Send a new batch" %} – {% trans "Mailing" %}{% endblock %}
+
+{% block breadcrumbs %}
+  {{ block.super }}
+  {% breadcrumb_for 'mailing:dashboard' %}{% trans "Mailing" %}{% endbreadcrumb_for %}
+  {% breadcrumb_for 'mailing:batch:list' %}{% trans "Batches" %}{% endbreadcrumb_for %}
+  {% breadcrumb_for 'mailing:batch:create' %}{% trans "New batch" %}{% endbreadcrumb_for %}
+{% endblock %}
+
+{% block content %}
+
+  <h1>{% trans "Send a new batch" %}</h1>
+
+  {% crispy form %}
+
+{% endblock %}

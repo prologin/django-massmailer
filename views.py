@@ -1,33 +1,37 @@
 import bleach
 import json
-
 import inspect
 import markdown
 import traceback
-
 import pyparsing
+
 from django.apps import apps
 from django.contrib.auth import get_user_model
 from django.core import serializers
 from django.core.exceptions import FieldError
 from django.db import models
-from django.db.models import Count, FieldDoesNotExist
+from django.db import transaction
+from django.db.models import Count
 from django.http.response import JsonResponse
+from django.urls import reverse
+from django.urls.base import reverse_lazy
 from django.utils.decorators import method_decorator
 from django.utils.functional import cached_property
 from django.utils.text import ugettext_lazy as _
 from django.views.decorators.csrf import csrf_exempt
 from django.views.generic import View
 from django.views.generic.base import TemplateView
-from django.views.generic.edit import UpdateView, CreateView, ModelFormMixin
+from django.views.generic.edit import UpdateView, CreateView, ModelFormMixin, DeleteView
+from django.views.generic.list import ListView
 from reversion.views import RevisionMixin
 from rules.contrib.views import PermissionRequiredMixin
 
 import mailing.forms
 import mailing.models
+import mailing.tasks
 import mailing.query_parser
 from mailing.utils import JinjaEscapeExtension
-from users.models import search_users
+from prologin.utils.db import lock_model
 
 
 class MailingPermissionMixin(PermissionRequiredMixin):
@@ -221,3 +225,89 @@ class QueryPreviewView(MailingPermissionMixin, View):
                 error = traceback.format_exc(limit=2)
             data = {'error': error}
         return JsonResponse(data)
+
+
+class BatchListView(PermissionRequiredMixin, ListView):
+    model = mailing.models.Batch
+    template_name = 'mailing/batch-list.html'
+    context_object_name = 'batches'
+    paginate_by = 25
+    permission_required = 'mailing.admin'
+
+
+class BatchCreateView(PermissionRequiredMixin, CreateView):
+    model = mailing.models.Batch
+    form_class = mailing.forms.CreateBatchForm
+    template_name = 'mailing/batch-create.html'
+    permission_required = 'mailing.send'
+
+    def get_success_url(self):
+        return reverse('mailing:batch:detail', args=[self.object.pk])
+
+    def form_valid(self, form):
+        with transaction.atomic():
+            # prevent django/celery race
+            lock_model(mailing.models.BatchEmail)
+
+            # create the batch
+            batch = form.save(commit=False)
+            batch.initiator = self.request.user
+            batch.save()
+
+            emails = list(batch.build_emails())
+            with transaction.atomic():
+                # create the batch emails
+                mailing.models.BatchEmail.objects.bulk_create(emails)
+
+            # create the tasks
+            for email in emails:
+                email.send_task()
+
+        return super().form_valid(form)
+
+
+class BatchDetailView(PermissionRequiredMixin, ListView):
+    model = mailing.models.BatchEmail
+    template_name = 'mailing/batch-emails.html'
+    context_object_name = 'emails'
+    paginate_by = 200
+    permission_required = 'mailing.admin'
+
+    @property
+    def batch_id(self):
+        return self.kwargs['id']
+
+    @cached_property
+    def batch(self):
+        return (mailing.models.Batch.objects.prefetch_related('emails')
+                .annotate(email_count=Count('emails'))
+                .get(pk=self.batch_id))
+
+    def get_queryset(self):
+        return self.batch.emails.all()
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['batch'] = self.batch
+        return context
+
+
+class BatchRetryView(PermissionRequiredMixin, UpdateView):
+    model = mailing.models.Batch
+    pk_url_kwarg = 'id'
+    fields = []
+    success_url = reverse_lazy('mailing:batch:list')
+    permission_required = 'mailing.send'
+
+    def form_valid(self, form):
+        # create the tasks
+        for email in self.get_object().pending_emails():
+            email.send_task()
+        return super(ModelFormMixin, self).form_valid(form)
+
+
+class BatchDeleteView(PermissionRequiredMixin, DeleteView):
+    model = mailing.models.Batch
+    pk_url_kwarg = 'id'
+    success_url = reverse_lazy('mailing:batch:list')
+    permission_required = 'mailing.send'

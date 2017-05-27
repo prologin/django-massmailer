@@ -16,8 +16,21 @@ query_patterns = [
     url(r'^(?P<id>[0-9]+)\-(?P<slug>[\w_-]+)/', mailing.views.UpdateQueryView.as_view(), name='update'),
 ]
 
+batch_obj_patterns = [
+    url(r'^$', mailing.views.BatchDetailView.as_view(), name='detail'),
+    url(r'^retry$', mailing.views.BatchRetryView.as_view(), name='retry-pending'),
+    url(r'^delete', mailing.views.BatchDeleteView.as_view(), name='delete'),
+]
+
+batch_patterns = [
+    url(r'^$', mailing.views.BatchListView.as_view(), name='list'),
+    url(r'^new', mailing.views.BatchCreateView.as_view(), name='new'),
+    url(r'^(?P<id>[0-9]+)/', include(batch_obj_patterns)),
+]
+
 urlpatterns = [
     url(r'^$', mailing.views.DashboardView.as_view(), name='dashboard'),
     url(r'^template/', include(template_patterns, namespace='template')),
     url(r'^query/', include(query_patterns, namespace='query')),
+    url(r'^batch/', include(batch_patterns, namespace='batch')),
 ]
