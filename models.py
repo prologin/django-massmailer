@@ -1,11 +1,16 @@
-import enum
-
 import bleach
+import enum
 import jinja2
 import jinja2.meta
 import jinja2.runtime
 import locale
 import re
+import uuid
+
+from django.conf import settings
+from django.db.models import Count
+from django.utils import timezone
+
 from django.contrib.auth import get_user_model
 from django.core import mail
 from django.core.exceptions import FieldDoesNotExist
@@ -15,12 +20,21 @@ from django.utils.text import ugettext_lazy as _, slugify
 
 from mailing.query_parser import parse_query, ParseError
 from prologin.utils import override_locale
+from prologin.utils.db import ConditionalSum
 
 TEMPLATE_OPTS = {'autoescape': False,
                  'trim_blocks': True,
                  'undefined': jinja2.runtime.StrictUndefined}
 
 RE_TAG = re.compile(r'\{([%#])(.*?)\1\}|\{\{(.*?)\}\}', re.MULTILINE | re.DOTALL)
+
+
+class MailState(enum.IntEnum):
+    pending = enum.auto()
+    sent = enum.auto()
+    delivered = enum.auto()
+    bounced = enum.auto()
+    complained = enum.auto()
 
 
 class TemplateItem(enum.Enum):
@@ -165,26 +179,132 @@ class Query(models.Model):
         return result, user_qs
 
 
-def build_emails(template: Template, query: Query, attachments=None):
-    User = get_user_model()
-    # TODO: attachments
-    result, user_qs = query.get_results()
-    queryset = result.queryset.order_by('pk')
+class BatchManager(models.Manager):
+    def get_queryset(self):
+        return (super().get_queryset()
+            .select_related('query', 'template', 'initiator')
+            .prefetch_related('emails')
+            .annotate(
+            email_count=Count('emails'),
+            pending_email_count=ConditionalSum(emails__state=MailState.pending.value),
+            sent_email_count=ConditionalSum(emails__state=MailState.sent.value),
+        ))
 
-    if result.queryset.model is User:
-        user_getter = lambda object: object
-    else:
-        user_getter = lambda object: getattr(object, result.aliases['user'])
 
-    for object in queryset:
-        context = {alias: getattr(object, field) for alias, field in result.aliases.items()}
-        context[result.model_name] = object
-        user = user_getter(object)
-        email = mail.EmailMessage(
-            to=[user.email],
-            subject=template.render(TemplateItem.subject, context),
-            body=template.render(TemplateItem.plain, context),
-            # TODO: html
-            headers={'List-Unsubscribe': '<{}>'.format(user.get_unsubscribe_url())},
-        )
-        yield email
+class Batch(models.Model):
+    name = models.CharField(max_length=140, blank=True, verbose_name=_("Optional name"))
+    template = models.ForeignKey(Template, null=True, on_delete=models.SET_NULL, related_name='batches', verbose_name=_("Template"))
+    query = models.ForeignKey(Query, null=True, on_delete=models.SET_NULL, related_name='batches', verbose_name=_("Query"))
+    initiator = models.ForeignKey(settings.AUTH_USER_MODEL, null=True, on_delete=models.SET_NULL, related_name='mailing_batches')
+    date_created = models.DateTimeField(default=timezone.now, null=False)
+
+    class Meta:
+        ordering = ['-date_created']
+        verbose_name = _("Batch")
+        verbose_name_plural = _("Batches")
+
+    objects = BatchManager()
+
+    @property
+    def default_name(self):
+        return _("Batch %(id)s") % {'id': self.pk}
+
+    def __str__(self):
+        return self.name or self.default_name
+
+    @property
+    def completed(self):
+        return not self.pending_email_count
+
+    @property
+    def erroneous_email_count(self):
+        return self.email_count - self.pending_email_count - self.sent_email_count
+
+    @property
+    def percentage_sent(self):
+        return 100 * self.sent_email_count / self.email_count
+
+    @property
+    def percentage_erroneous(self):
+        return 100 * self.erroneous_email_count / self.email_count
+
+    def pending_emails(self):
+        return self.emails.filter(state=MailState.pending.value)
+
+    def erroneous_emails(self):
+        return self.emails.exclude(state=MailState.pending.value).exclude(state=MailState.sent.value)
+
+    def build_emails(self):
+        result, user_qs = self.query.get_results()
+        queryset = result.queryset.order_by('pk')
+
+        if result.queryset.model is get_user_model():
+            user_getter = lambda object: object
+        else:
+            user_getter = lambda object: getattr(object, result.aliases['user'])
+
+        html_enabled = self.template.html_enabled
+
+        for object in queryset:
+            context = {alias: getattr(object, field) for alias, field in result.aliases.items()}
+            context[result.model_name] = object
+            user = user_getter(object)
+            yield BatchEmail(
+                batch=self,
+                user=user,
+                to=user.email,
+                subject=self.template.render(TemplateItem.subject, context),
+                body=self.template.render(TemplateItem.plain, context),
+                html_body=self.template.render(TemplateItem.html, context) if html_enabled else None,
+            )
+
+
+class BatchEmail(models.Model):
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    state = models.PositiveIntegerField(db_index=True, null=False, default=MailState.pending.value)
+    batch = models.ForeignKey(Batch, null=False, related_name='emails')
+    user = models.ForeignKey(settings.AUTH_USER_MODEL, null=True)
+
+    to = models.EmailField(blank=False)  # in case user is deleted or changes email
+    subject = models.TextField(blank=True)
+    body = models.TextField(blank=True)
+    html_body = models.TextField(blank=True, default="")
+
+    class Meta:
+        ordering = ['state']
+
+    def __str__(self):
+        return str(self.id)
+
+    @property
+    def state_display(self):
+        return MailState(self.state).name
+
+    @property
+    def task_id(self):
+        return 'mailing-{}'.format(self.pk)
+
+    @property
+    def pending(self):
+        return self.state == MailState.pending.value
+
+    def build_email(self):
+        assert self.subject
+        assert self.body
+        # add a custom header to resolve the mail ID from amazon bounces/complaints
+        headers = {'X-MID': self.id}
+        if self.user:
+            headers['List-Unsubscribe'] = '<{}>'.format(self.user.get_unsubscribe_url())
+
+        kwargs = {'to': [self.to], 'subject': self.subject, 'body': self.body, 'headers': headers}
+
+        if self.html_body:
+            email = mail.EmailMultiAlternatives(**kwargs)
+            email.attach_alternative(self.html_body, 'text/html')
+        else:
+            email = mail.EmailMessage(**kwargs)
+        return email
+
+    def send_task(self):
+        from mailing.tasks import send_email
+        return send_email.apply_async(args=[self.pk], task_id=self.task_id)

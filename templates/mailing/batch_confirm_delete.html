@@ -1,0 +1,27 @@
+{% extends "prologin/base.html" %}
+{% load i18n staticfiles %}
+{% load django_bootstrap_breadcrumbs crispy_forms_tags %}
+
+{% block title %}{% trans "Delete a batch" %} – {% trans "Mailing" %}{% endblock %}
+
+{% block breadcrumbs %}
+  {{ block.super }}
+  {% breadcrumb_for 'mailing:dashboard' %}{% trans "Mailing" %}{% endbreadcrumb_for %}
+  {% breadcrumb_for 'mailing:batch:list' %}{% trans "Batches" %}{% endbreadcrumb_for %}
+  {% breadcrumb_for 'mailing:batch:detail' batch.pk %}{{ batch }}{% endbreadcrumb_for %}
+  {% breadcrumb_for 'mailing:batch:delete' batch.pk %}{% trans "Delete" %}{% endbreadcrumb_for %}
+{% endblock %}
+
+{% block content %}
+
+  <h1>{% trans "Delete a batch" %}</h1>
+
+  <p>{% blocktrans with batch=batch %}Are you sure you want to delete <em>{{ batch }}</em>?{% endblocktrans %}</p>
+
+  <form method="post">
+    {% csrf_token %}
+    <button type="button" class="btn btn-default" onclick="window.history.back();">{% trans "Cancel" %}</button>
+    <button type="submit" class="btn btn-danger"><i class="fa fa-trash-o"></i> {% trans "Delete" %}</button>
+  </form>
+
+{% endblock %}

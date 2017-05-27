@@ -1,0 +1,47 @@
+{% extends "prologin/base.html" %}
+{% load i18n staticfiles %}
+{% load django_bootstrap_breadcrumbs crispy_forms_tags %}
+
+{% block title %}{{ batch }} – {% trans "Batch" %} – {% trans "Mailing" %}{% endblock %}
+
+{% block breadcrumbs %}
+  {{ block.super }}
+  {% breadcrumb_for 'mailing:dashboard' %}{% trans "Mailing" %}{% endbreadcrumb_for %}
+  {% breadcrumb_for 'mailing:batch:list' %}{% trans "Batches" %}{% endbreadcrumb_for %}
+  {% breadcrumb_for 'mailing:batch:detail' batch.pk %}{{ batch }}{% endbreadcrumb_for %}
+{% endblock %}
+
+{% block content %}
+
+  <h1>{% blocktrans with name=batch %}Batch details for {{ name }}{% endblocktrans %}</h1>
+
+  <p>{% blocktrans with initiator=batch.initiator date=batch.date_created|date:'SHORT_DATETIME_FORMAT' %}Initiated by <strong>{{ initiator }}</strong> on {{ date }}.{% endblocktrans %}</p>
+  <p>
+    <a href="{% url 'mailing:template:update' batch.template.id %}" class="btn btn-default btn-sm" title="{% trans "Template" %}"><i class="fa fa-book"></i> {{ batch.template }}</a>
+    <a href="{% url 'mailing:query:update' batch.query.id %}" class="btn btn-default btn-sm" title="{% trans "Query" %}"><i class="fa fa-database"></i> {{ batch.query }}</a>
+  </p>
+
+  {% include "stub_pagination.html" %}
+
+  <table class="table table-striped">
+  <thead><tr>
+    <th>{% trans "ID" %}</th>
+    <th>{% trans "User" %}</th>
+    <th>{% trans "Subject" %}</th>
+    <th>{% trans "State" %}</th>
+  </tr></thead>
+  <tbody>
+  {% for email in emails %}
+    <tr>
+      <td>{{ email.id }}</td>
+      <td>{% if email.user %}<a href="{% url 'users:profile' email.user.pk %}">{{ email.user.username }}</a>{% endif %} <small class="text-muted">{{ email.email }}</small></td>
+      <td><tt>{{ email.subject|truncatechars:32 }}</tt></td>
+      <td>{{ email.state_display }}</td>
+    </tr>
+  {% endfor %}
+  </tbody>
+  </table>
+
+  {% include "stub_pagination.html" %}
+
+{% endblock %}

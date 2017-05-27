@@ -1,0 +1,66 @@
+{% extends "prologin/base.html" %}
+{% load i18n l10n staticfiles %}
+{% load django_bootstrap_breadcrumbs crispy_forms_tags %}
+
+{% block title %}{% trans "Batches" %} – {% trans "Mailing" %}{% endblock %}
+
+{% block breadcrumbs %}
+  {{ block.super }}
+  {% breadcrumb_for 'mailing:dashboard' %}{% trans "Mailing" %}{% endbreadcrumb_for %}
+  {% breadcrumb_for 'mailing:batch:list' %}{% trans "Batches" %}{% endbreadcrumb_for %}
+{% endblock %}
+
+{% block content %}
+
+  <h1>Email batches</h1>
+
+  <a href="{% url 'mailing:batch:new' %}" class="btn btn-primary"><i class="fa fa-paper-plane-o"></i> {% trans "New batch" %}</a>
+
+  {% include "stub_pagination.html" %}
+
+  <table class="table table-striped">
+  <thead><tr>
+    <th>{% trans "ID" %}</th>
+    <th>{% trans "Initiator" %}</th>
+    <th>{% trans "Template" %}</th>
+    <th>{% trans "Query" %}</th>
+    <th width="70"></th>
+    <th>{% trans "Pending ⋅ Sent ⋅ Error ⋅ Total" %}</th>
+  </tr></thead>
+  <tbody>
+  {% for batch in batches %}
+    <tr>
+      <td><a href="{% url 'mailing:batch:detail' batch.pk %}">{{ batch }}</a></td>
+      <td>{% if batch.initiator %}<a href="{% url 'users:profile' batch.initiator.pk %}">{{ batch.initiator.username }}</a>{% endif %}</td>
+      <td><a href="{% url 'mailing:template:update' batch.template.pk %}">{{ batch.template }}</a></td>
+      <td><a href="{% url 'mailing:query:update' batch.query.pk %}">{{ batch.query }}</a></td>
+      <td>
+        <a href="{% url 'mailing:batch:delete' batch.pk %}" class="btn btn-xs btn-danger" title="{% trans "Delete" %}"><i class="fa fa-trash-o"></i></a>
+      {% if batch.completed %}
+        <button type="button" class="btn btn-xs btn-default" disabled title="{% trans "Completed" %}"><i class="fa fa-check text-success"></i></button>
+      {% else %}
+        <form method="post" action="{% url 'mailing:batch:retry-pending' batch.pk %}" style="display: inline;">
+          {% csrf_token %}
+          <button type="submit" class="btn btn-xs btn-default" title="{% trans "Retry pending" %}"><i class="fa fa-refresh"></i></button>
+        </form>
+      {% endif %}
+      </td>
+      <td>
+        <div class="progress" style="margin: 0; position: relative;">
+          <span style="color: #222; font-size: .9em; position: absolute; left: 0; right: 0; text-align: center; white-space: nowrap">{{ batch.pending_email_count }} ⋅ {{ batch.erroneous_email_count }} ⋅ {{ batch.sent_email_count }} ⋅ {{ batch.email_count }}</span>
+          {% localize off %}
+          <div class="progress-bar progress-bar-warning" role="progressbar" style="width: {{ batch.percentage_erroneous }}%;"></div>
+          <div class="progress-bar progress-bar-success" role="progressbar" style="width: {{ batch.percentage_sent }}%;"></div>
+          {% endlocalize %}
+        </div>
+      </td>
+    </tr>
+  {% empty %}
+    <tr class="text-muted"><td colspan="4"><i class="fa fa-frown-o"></i> {% trans "There is no batch yet." %}</td></tr>
+  {% endfor %}
+  </tbody>
+  </table>
+
+  {% include "stub_pagination.html" %}
+
+{% endblock %}
