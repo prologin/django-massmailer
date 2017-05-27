@@ -22,6 +22,7 @@
   <thead><tr>
     <th>{% trans "ID" %}</th>
     <th>{% trans "Initiator" %}</th>
+    <th>{% trans "Created" %}</th>
     <th>{% trans "Template" %}</th>
     <th>{% trans "Query" %}</th>
     <th width="70"></th>
@@ -32,6 +33,7 @@
     <tr>
       <td><a href="{% url 'mailing:batch:detail' batch.pk %}">{{ batch }}</a></td>
       <td>{% if batch.initiator %}<a href="{% url 'users:profile' batch.initiator.pk %}">{{ batch.initiator.username }}</a>{% endif %}</td>
+      <td>{{ batch.date_created|date:'SHORT_DATETIME_FORMAT' }}</td>
       <td><a href="{% url 'mailing:template:update' batch.template.pk %}">{{ batch.template }}</a></td>
       <td><a href="{% url 'mailing:query:update' batch.query.pk %}">{{ batch.query }}</a></td>
       <td>
