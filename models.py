@@ -255,7 +255,7 @@ class Batch(models.Model):
                 to=user.email,
                 subject=self.template.render(TemplateItem.subject, context),
                 body=self.template.render(TemplateItem.plain, context),
-                html_body=self.template.render(TemplateItem.html, context) if html_enabled else None,
+                html_body=self.template.render(TemplateItem.html, context) if html_enabled else "",
             )
 
 
