@@ -30,11 +30,11 @@ RE_TAG = re.compile(r'\{([%#])(.*?)\1\}|\{\{(.*?)\}\}', re.MULTILINE | re.DOTALL
 
 
 class MailState(enum.IntEnum):
-    pending = enum.auto()
-    sent = enum.auto()
-    delivered = enum.auto()
-    bounced = enum.auto()
-    complained = enum.auto()
+    pending = 1
+    sent = 2
+    delivered = 3
+    bounced = 4
+    complained = 5
 
 
 class TemplateItem(enum.Enum):
