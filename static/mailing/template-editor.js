@@ -3,7 +3,8 @@
     var settings = $.extend({
       showLineNumbers: true,
       highlightActiveLine: true,
-      showPrintMargin: false,
+      showPrintMargin: true,
+      printMarginColumn: 72,
       showFoldWidgets: false,
     }, options);
 
@@ -96,12 +97,12 @@
           }
           $result_page.val(page + 1).attr('max', count);
           $('#preview-subject-error').text(data.render.subject.error ? data.render.subject.error.msg : '');
-          $('.preview-subject-content').text(data.render.subject.content);
+          $('#preview-plain .preview-subject > div:last-child, #preview-html .preview-subject').text(data.render.subject.content);
+          $('#preview-plain .preview-content > div:last-child').text(data.render.plain.content);
           $('#preview-plain-error').text(data.render.plain.error ? data.render.plain.error.msg : '');
-          $('#preview-plain-content').text(data.render.plain.content);
           if ($html_enabled.prop('checked')) {
             $('#preview-html-error').text(data.render.html.error ? data.render.html.error.msg : '');
-            $('#preview-html-content').html(data.render.html.content);
+            $('#preview-html .preview-content').html(data.render.html.content);
             if ($use_markdown.prop('checked')) {
               html_editor.getSession().getDocument().setValue(data.html_template);
             }
