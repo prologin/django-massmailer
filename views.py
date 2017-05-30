@@ -8,11 +8,11 @@ import pyparsing
 from django.apps import apps
 from django.contrib.auth import get_user_model
 from django.core import serializers
-from django.core.exceptions import FieldError
+from django.core.exceptions import FieldError, ObjectDoesNotExist
 from django.db import models
 from django.db import transaction
 from django.db.models import Count
-from django.http.response import JsonResponse
+from django.http.response import JsonResponse, Http404
 from django.urls import reverse
 from django.urls.base import reverse_lazy
 from django.utils.decorators import method_decorator
@@ -40,7 +40,10 @@ class MailingPermissionMixin(PermissionRequiredMixin):
 
 class ObjectByIdMixin:
     def get_object(self, queryset=None):
-        return (queryset or self.get_queryset()).get(pk=self.kwargs['id'])
+        try:
+            return (queryset or self.get_queryset()).get(pk=self.kwargs['id'])
+        except ObjectDoesNotExist:
+            raise Http404()
 
 
 class DashboardView(MailingPermissionMixin, TemplateView):
