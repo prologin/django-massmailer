@@ -22,10 +22,12 @@ from mailing.query_parser import parse_query, ParseError
 from prologin.utils import override_locale
 from prologin.utils.db import ConditionalSum
 
+
 TEMPLATE_OPTS = {'autoescape': False,
                  'trim_blocks': True,
                  'undefined': jinja2.runtime.StrictUndefined}
 
+VARIABLE_PLACEHOLDER = '<span class="placeholder">\u25cc</span>'
 RE_TAG = re.compile(r'\{([%#])(.*?)\1\}|\{\{(.*?)\}\}', re.MULTILINE | re.DOTALL)
 
 
@@ -91,7 +93,7 @@ class Template(models.Model):
         text = self.template_source(item)
 
         def replace(match):
-            return jinja2.Markup('<span class="placeholder">\u25cc</em>')
+            return jinja2.Markup(VARIABLE_PLACEHOLDER)
 
         return RE_TAG.sub(replace, text)
 
