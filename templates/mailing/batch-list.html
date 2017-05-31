@@ -26,7 +26,7 @@
     <th>{% trans "Template" %}</th>
     <th>{% trans "Query" %}</th>
     <th width="70"></th>
-    <th>{% trans "Pending ⋅ Sent ⋅ Error ⋅ Total" %}</th>
+    <th>{% trans "Progress" %}</th>
   </tr></thead>
   <tbody>
   {% for batch in batches %}
@@ -48,11 +48,20 @@
       {% endif %}
       </td>
       <td>
+        <small class="batch-detail" title="{% trans "Total ⋅ Pending ⋅ Sending ⋅ Sent ⋅ Bounced ⋅ Complaints" %}">
+          <strong>{{ batch.email_count }}</strong> ⋅
+          {{ batch.pending_email_count }} ⋅
+          {{ batch.sending_email_count }} ⋅
+          {{ batch.sent_email_count }} ⋅
+          {{ batch.bounced_email_count }} ⋅
+          {{ batch.complained_email_count }}
+        </small>
         <div class="progress" style="margin: 0; position: relative;">
-          <span style="color: #222; font-size: .9em; position: absolute; left: 0; right: 0; text-align: center; white-space: nowrap">{{ batch.pending_email_count }} ⋅ {{ batch.erroneous_email_count }} ⋅ {{ batch.sent_email_count }} ⋅ {{ batch.email_count }}</span>
           {% localize off %}
-          <div class="progress-bar progress-bar-warning" role="progressbar" style="width: {{ batch.percentage_erroneous }}%;"></div>
-          <div class="progress-bar progress-bar-success" role="progressbar" style="width: {{ batch.percentage_sent }}%;"></div>
+          <div class="progress-bar progress-bar-info" role="progressbar" style="width: {{ batch.sending_percentage }}%;"></div>
+          <div class="progress-bar progress-bar-success" role="progressbar" style="width: {{ batch.sent_percentage }}%;"></div>
+          <div class="progress-bar progress-bar-warning" role="progressbar" style="width: {{ batch.bounced_percentage }}%;"></div>
+          <div class="progress-bar progress-bar-danger" role="progressbar" style="width: {{ batch.complained_percentage }}%;"></div>
           {% endlocalize %}
         </div>
       </td>

@@ -4,24 +4,25 @@ import jinja2
 import jinja2.meta
 import jinja2.runtime
 import locale
+import operator
 import re
 import uuid
 
 from django.conf import settings
-from django.db.models import Count
-from django.utils import timezone
-
 from django.contrib.auth import get_user_model
 from django.core import mail
 from django.core.exceptions import FieldDoesNotExist
 from django.core.urlresolvers import reverse
 from django.db import models
+from django.db.models import Count, F
+from django.db.models.fields import BooleanField
+from django.utils import timezone
 from django.utils.text import ugettext_lazy as _, slugify
+from functools import reduce
 
 from mailing.query_parser import parse_query, ParseError
 from prologin.utils import override_locale
-from prologin.utils.db import ConditionalSum
-
+from prologin.utils.db import ConditionalSum, CaseMapping
 
 TEMPLATE_OPTS = {'autoescape': False,
                  'trim_blocks': True,
@@ -33,10 +34,15 @@ RE_TAG = re.compile(r'\{([%#])(.*?)\1\}|\{\{(.*?)\}\}', re.MULTILINE | re.DOTALL
 
 class MailState(enum.IntEnum):
     pending = 1
-    sent = 2
-    delivered = 3
-    bounced = 4
-    complained = 5
+    sending = 2
+    sent = 3
+    delivered = 4
+    bounced = 5
+    complained = 6
+
+    @classmethod
+    def bad(cls):
+        return {cls.bounced, cls.complained}
 
 
 class TemplateItem(enum.Enum):
@@ -183,13 +189,28 @@ class Query(models.Model):
 
 class BatchManager(models.Manager):
     def get_queryset(self):
+        total = F('email_count')
+        ecount = lambda e: F('{}_email_count'.format(e))
+        epercent = lambda e: F('{}_percentage'.format(e))
+        percentage = lambda f: 100. * f / total
         return (super().get_queryset()
             .select_related('query', 'template', 'initiator')
             .prefetch_related('emails')
+            .annotate(email_count=Count('emails'))
+            .annotate(**{
+                ecount(state.name).name: ConditionalSum(emails__state=state.value)
+                for state in MailState
+            })
+            .annotate(**{
+                epercent(state.name).name: percentage(ecount(state.name))
+                for state in MailState
+            })
             .annotate(
-            email_count=Count('emails'),
-            pending_email_count=ConditionalSum(emails__state=MailState.pending.value),
-            sent_email_count=ConditionalSum(emails__state=MailState.sent.value),
+                unsent_email_count=ecount('pending') + ecount('sending'),
+                unsent_percentage=percentage(ecount('unsent')),
+                erroneous_email_count=reduce(operator.add, (ecount(state.name) for state in MailState.bad())),
+                erroneous_percentage=percentage(ecount('erroneous')),
+                completed=CaseMapping(ecount('unsent').name, [(0, True)], default=False, output_field=BooleanField()),
         ))
 
 
@@ -214,27 +235,12 @@ class Batch(models.Model):
     def __str__(self):
         return self.name or self.default_name
 
-    @property
-    def completed(self):
-        return not self.pending_email_count
-
-    @property
-    def erroneous_email_count(self):
-        return self.email_count - self.pending_email_count - self.sent_email_count
-
-    @property
-    def percentage_sent(self):
-        return 100 * self.sent_email_count / self.email_count
-
-    @property
-    def percentage_erroneous(self):
-        return 100 * self.erroneous_email_count / self.email_count
-
     def pending_emails(self):
         return self.emails.filter(state=MailState.pending.value)
 
+    @property
     def erroneous_emails(self):
-        return self.emails.exclude(state=MailState.pending.value).exclude(state=MailState.sent.value)
+        return self.emails.filter(state__in=[state.value for state in MailState.bad()])
 
     def build_emails(self):
         result, user_qs = self.query.get_results()
@@ -276,7 +282,7 @@ class BatchEmail(models.Model):
         ordering = ['state']
 
     def __str__(self):
-        return str(self.id)
+        return '[{}] {}'.format(self.state_display, self.id)
 
     @property
     def state_display(self):

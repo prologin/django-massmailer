@@ -31,7 +31,6 @@ import mailing.models
 import mailing.tasks
 import mailing.query_parser
 from mailing.utils import JinjaEscapeExtension
-from prologin.utils.db import lock_model
 
 
 class MailingPermissionMixin(PermissionRequiredMixin):
@@ -249,22 +248,18 @@ class BatchCreateView(PermissionRequiredMixin, CreateView):
 
     def form_valid(self, form):
         with transaction.atomic():
-            # prevent django/celery race
-            lock_model(mailing.models.BatchEmail)
-
             # create the batch
             batch = form.save(commit=False)
             batch.initiator = self.request.user
             batch.save()
 
             emails = list(batch.build_emails())
-            with transaction.atomic():
-                # create the batch emails
-                mailing.models.BatchEmail.objects.bulk_create(emails)
+            # create the batch emails
+            mailing.models.BatchEmail.objects.bulk_create(emails)
 
-            # create the tasks
-            for email in emails:
-                email.send_task()
+        # create the tasks
+        for email in emails:
+            email.send_task()
 
         return super().form_valid(form)
 
