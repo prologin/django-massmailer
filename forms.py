@@ -75,7 +75,7 @@ class CreateBatchForm(forms.ModelForm):
         return field
 
     def foolproof_enabled(self):
-        return True or not settings.DEBUG
+        return not settings.DEBUG
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
