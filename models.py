@@ -14,8 +14,7 @@ from django.core import mail
 from django.core.exceptions import FieldDoesNotExist
 from django.core.urlresolvers import reverse
 from django.db import models
-from django.db.models import Count, F
-from django.db.models.fields import BooleanField
+from django.db.models import Count, F, BooleanField
 from django.utils import timezone
 from django.utils.text import ugettext_lazy as _, slugify
 from functools import reduce
@@ -191,27 +190,29 @@ class BatchManager(models.Manager):
     def get_queryset(self):
         total = F('email_count')
         ecount = lambda e: F('{}_email_count'.format(e))
-        epercent = lambda e: F('{}_percentage'.format(e))
-        percentage = lambda f: 100. * f / total
-        return (super().get_queryset()
-            .select_related('query', 'template', 'initiator')
-            .prefetch_related('emails')
-            .annotate(email_count=Count('emails'))
-            .annotate(**{
-                ecount(state.name).name: ConditionalSum(emails__state=state.value)
-                for state in MailState
-            })
-            .annotate(**{
-                epercent(state.name).name: percentage(ecount(state.name))
-                for state in MailState
-            })
-            .annotate(
-                unsent_email_count=ecount('pending') + ecount('sending'),
-                unsent_percentage=percentage(ecount('unsent')),
-                erroneous_email_count=reduce(operator.add, (ecount(state.name) for state in MailState.bad())),
-                erroneous_percentage=percentage(ecount('erroneous')),
-                completed=CaseMapping(ecount('unsent').name, [(0, True)], default=False, output_field=BooleanField()),
-        ))
+
+        qs = (super().get_queryset()
+              .select_related('query', 'template', 'initiator')
+              .prefetch_related('emails'))
+
+        def annotate(key, value):
+            nonlocal qs
+            qs = qs.annotate(**{key: value})
+
+        def annotate_count(name, expr):
+            count_field = ecount(name)
+            annotate(count_field.name, expr)
+            annotate('{}_percentage'.format(name), 100. * count_field / total)
+
+        annotate(total.name, Count('emails'))
+
+        for state in MailState:
+            annotate_count(state.name, ConditionalSum(emails__state=state.value))
+
+        annotate_count('unsent', ecount('pending') + ecount('sending'))
+        annotate_count('erroneous', reduce(operator.add, (ecount(state.name) for state in MailState.bad())))
+        annotate('completed', CaseMapping(ecount('unsent').name, [(0, True)], default=False, output_field=BooleanField()))
+        return qs
 
 
 class Batch(models.Model):
