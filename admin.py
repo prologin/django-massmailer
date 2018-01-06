@@ -1,7 +1,7 @@
 from django.contrib import admin
 from django.db.models import Count
 from reversion.admin import VersionAdmin
-from django.utils.text import ugettext_lazy as _
+from django.utils.translation import ugettext_lazy as _
 import mailing.models
 
 
