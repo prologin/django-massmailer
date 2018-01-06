@@ -270,9 +270,9 @@ class Batch(models.Model):
 
 class BatchEmail(models.Model):
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
-    state = models.PositiveIntegerField(db_index=True, null=False, default=MailState.pending.value)
-    batch = models.ForeignKey(Batch, null=False, related_name='emails')
-    user = models.ForeignKey(settings.AUTH_USER_MODEL, null=True)
+    state = models.PositiveIntegerField(db_index=True, default=MailState.pending.value)
+    batch = models.ForeignKey(Batch, related_name='emails', on_delete=models.CASCADE)
+    user = models.ForeignKey(settings.AUTH_USER_MODEL, null=True, on_delete=models.SET_NULL)
 
     to = models.EmailField(blank=False)  # in case user is deleted or changes email
     subject = models.TextField(blank=True)
