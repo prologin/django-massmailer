@@ -17,7 +17,7 @@ from django.urls import reverse
 from django.urls.base import reverse_lazy
 from django.utils.decorators import method_decorator
 from django.utils.functional import cached_property
-from django.utils.text import ugettext_lazy as _
+from django.utils.translation import ugettext_lazy as _
 from django.views.decorators.csrf import csrf_exempt
 from django.views.generic import View
 from django.views.generic.base import TemplateView
