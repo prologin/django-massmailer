@@ -27,7 +27,7 @@ batch_obj_patterns = [
 batch_patterns = [
     path('', mailing.views.BatchListView.as_view(), name='list'),
     path('new', mailing.views.BatchCreateView.as_view(), name='new'),
-    path('<int:id>/', include((batch_obj_patterns, app_name))),
+    path('<int:id>/', include(batch_obj_patterns)),
 ]
 
 urlpatterns = [
