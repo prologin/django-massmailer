@@ -1,4 +1,5 @@
 from django.urls import reverse
+from django.conf import settings
 from unittest import mock
 
 from prologin import tests
@@ -116,6 +117,7 @@ class BatchSendTestCase(tests.WithSuperUserMixin, tests.ProloginTestCase):
         with self.user_login(self.super_user):
             data = {'name': "this is my test batch", 'template': template.pk, 'query': query.pk}
             # first send: should be greeted with "foolproof is required"
+            self.client.cookies.load({settings.LANGUAGE_COOKIE_NAME: 'en'})
             response = self.client.post(reverse('mailing:batch:new'), data)
             self.assertFormError(response, 'form', 'foolproof', "This field is required.")
             # next send: should be ok
