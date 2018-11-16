@@ -5,7 +5,7 @@
 {% block title %}{% if query %}{{ query.name }}{% else %}{% trans "New query" %}{% endif %} – {% trans "Mailing" %}{% endblock %}
 
 {% block extra_head %}
-  <link rel="stylesheet" type="text/css" href="{% static 'lib/css/select2.min.css' %}">
+  <link rel="stylesheet" type="text/css" href="{% static 'vendor/select2/dist/css/select2.min.css' %}">
   <link rel="stylesheet" type="text/css" href="{% static 'mailing/mailing.css' %}">
 {% endblock %}
 
@@ -173,12 +173,9 @@ alias some_name = .some_field</pre>
     var PREVIEW_URL = '{% url 'mailing:query:preview' %}';
   </script>
   <script type="text/javascript" charset="utf-8" src="{% static 'js/utils.js' %}"></script>
-  <script type="text/javascript" charset="utf-8" src="{% static 'lib/js/select2.min.js' %}"></script>
-  {# <script type="text/javascript" charset="utf-8" src="{% static 'problems/lib/ace/src-min-noconflict/ace.js' %}"></script> #}
-  <script type="text/javascript" charset="utf-8" src="{% get_setting 'STATIC_URL' %}/problems/lib/ace/src-min-noconflict/ace.js"></script>
-  {# <script type="text/javascript" charset="utf-8" src="{% static 'problems/lib/ace/src-min-noconflict/ext-themelist.js' %}"></script> #}
-  <script type="text/javascript" charset="utf-8" src="{% get_setting 'STATIC_URL' %}/problems/lib/ace/src-min-noconflict/ext-themelists.js"></script>
-  {# <script type="text/javascript" charset="utf-8" src="{% static 'problems/lib/ace/src-min-noconflict/ext-language_tools.js' %}"></script> #}
-  <script type="text/javascript" charset="utf-8" src="{% get_setting 'STATIC_URL' %}/problems/lib/ace/src-min-noconflict/ext-language_tools.js"></script>
+  <script type="text/javascript" charset="utf-8" src="{% static 'vendor/select2/dist/js/select2.min.js' %}"></script>
+  <script type="text/javascript" charset="utf-8" src="{% static 'vendor/ace-builds/src-min-noconflict/ace.js' %}"></script>
+  <script type="text/javascript" charset="utf-8" src="{% static 'vendor/ace-builds/src-min-noconflict/ext-themelist.js' %}"></script>
+  <script type="text/javascript" charset="utf-8" src="{% static 'vendor/ace-builds/src-min-noconflict/ext-language_tools.js' %}"></script>
   <script type="text/javascript" charset="utf-8" src="{% static 'mailing/query-editor.js' %}"></script>
 {% endblock %}
