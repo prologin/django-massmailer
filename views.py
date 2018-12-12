@@ -72,6 +72,9 @@ class CreateTemplateView(TemplateMixin, CreateView):
         template.save()
         return super(ModelFormMixin, self).form_valid(form)
 
+    def get_object(self):
+        return None # the template isn't in db yet
+
 
 class UpdateTemplateView(TemplateMixin, ObjectByIdMixin, UpdateView):
     def form_valid(self, form):
@@ -178,6 +181,9 @@ class CreateQueryView(QueryMixin, CreateView):
         query.save()
         return super(ModelFormMixin, self).form_valid(form)
 
+    def get_object(self):
+        return None # the query isn't in the db yet
+
 
 class UpdateQueryView(QueryMixin, ObjectByIdMixin, UpdateView):
     pass
@@ -262,6 +268,9 @@ class BatchCreateView(PermissionRequiredMixin, CreateView):
             email.send_task()
 
         return super().form_valid(form)
+
+    def get_object(self):
+        return None # the batch isn't in the db yet
 
 
 class BatchDetailView(PermissionRequiredMixin, ListView):
