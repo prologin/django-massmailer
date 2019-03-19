@@ -2,11 +2,9 @@ import re
 from django.apps import apps
 from django.db.models import Func
 from django.db.models import Q
-from prologin.models import BaseEnumField
+from massmailing.utils.models import BaseEnumField
 import ast
 import pyparsing as p
-
-from prologin.utils import LazyDict
 
 
 class ParseError(ValueError):
@@ -32,6 +30,32 @@ def find_funcs(cls):
     elif not cls.__name__.startswith('_'):
         found[cls.__name__.lower()] = cls
     return found
+
+
+class LazyDictMeta(type):
+    def __call__(cls, *args, **kwargs):
+        for method_name in ('__contains__', '__delitem__', '__eq__',
+                            '__format__', '__ge__', '__getitem__', '__gt__',
+                            '__hash__', '__repr__', '__str__', '__iter__',
+                            '__le__', '__len__', '__lt__', '__ne__',
+                            '__reduce__', '__reduce_ex__', '__setitem__',
+                            '__sizeof__', 'clear', 'copy', 'fromkeys', 'get',
+                            'items', 'keys', 'pop', 'popitem', 'setdefault',
+                            'update', 'values'):
+            def wrap(name):
+                def wrapped(self, *args, **kwargs):
+                    if not hasattr(self, '_proxy'):
+                        self._proxy = self.__wakeup__()
+                    method = getattr(self._proxy, name)
+                    return method(*args, **kwargs)
+                return wrapped
+            setattr(cls, method_name, wrap(method_name))
+        return super().__call__(*args, **kwargs)
+
+
+class LazyDict(metaclass=LazyDictMeta):
+    def __wakeup__(self):
+        raise NotImplementedError()
 
 
 class LazyEnums(LazyDict):

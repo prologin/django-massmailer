@@ -1,7 +1,7 @@
 import celery
 from django.db import transaction
 
-from mailing.models import MailState, BatchEmail
+from massmailer.models import MailState, BatchEmail
 
 
 @celery.shared_task(

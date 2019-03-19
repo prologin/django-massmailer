@@ -20,9 +20,9 @@ from django.utils.text import slugify
 from django.utils.translation import ugettext_lazy as _
 from functools import reduce
 
-from mailing.query_parser import parse_query, ParseError
-from prologin.utils import override_locale
-from prologin.utils.db import ConditionalSum, CaseMapping
+from massmailer.query_parser import parse_query, ParseError
+from massmailer.utils import override_locale
+from massmailer.utils.db import ConditionalSum, CaseMapping
 
 TEMPLATE_OPTS = {'autoescape': False,
                  'trim_blocks': True,
@@ -89,6 +89,7 @@ class Template(models.Model):
         return jinja2.meta.find_undeclared_variables(ast)
 
     def render(self, item: TemplateItem, context: dict):
+        # TODO: make that generic and part of the model
         with override_locale(locale.LC_TIME, 'fr_FR.UTF-8'):
             content = self.template(item).render(context)
         if item is TemplateItem.html:
@@ -132,7 +133,7 @@ class Template(models.Model):
         return self.preview(TemplateItem.html)
 
     def get_absolute_url(self):
-        return reverse('mailing:template:update', kwargs={'id': self.pk, 'slug': slugify(self.name)})
+        return reverse('massmailer:template:update', kwargs={'id': self.pk, 'slug': slugify(self.name)})
 
 
 class Query(models.Model):
@@ -151,7 +152,7 @@ class Query(models.Model):
         return self.name
 
     def get_absolute_url(self):
-        return reverse('mailing:query:update', kwargs={'id': self.pk, 'slug': slugify(self.name)})
+        return reverse('massmailer:query:update', kwargs={'id': self.pk, 'slug': slugify(self.name)})
 
     def get_results(self):
         return self.execute(self.query)
@@ -220,7 +221,7 @@ class Batch(models.Model):
     name = models.CharField(max_length=140, blank=True, verbose_name=_("Optional name"))
     template = models.ForeignKey(Template, null=True, on_delete=models.SET_NULL, related_name='batches', verbose_name=_("Template"))
     query = models.ForeignKey(Query, null=True, on_delete=models.SET_NULL, related_name='batches', verbose_name=_("Query"))
-    initiator = models.ForeignKey(settings.AUTH_USER_MODEL, null=True, on_delete=models.SET_NULL, related_name='mailing_batches')
+    initiator = models.ForeignKey(settings.AUTH_USER_MODEL, null=True, on_delete=models.SET_NULL, related_name='massmailer_batches')
     date_created = models.DateTimeField(default=timezone.now, null=False)
 
     class Meta:
@@ -292,7 +293,7 @@ class BatchEmail(models.Model):
 
     @property
     def task_id(self):
-        return 'mailing-{}'.format(self.pk)
+        return 'massmailer-{}'.format(self.pk)
 
     @property
     def pending(self):
@@ -316,5 +317,5 @@ class BatchEmail(models.Model):
         return email
 
     def send_task(self):
-        from mailing.tasks import send_email
+        from massmailer.tasks import send_email
         return send_email.apply_async(args=[self.pk], task_id=self.task_id)
