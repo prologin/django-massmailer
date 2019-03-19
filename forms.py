@@ -11,18 +11,18 @@ from django.utils.html import format_html
 from django.utils.translation import ugettext_lazy as _
 from reversion.models import Version
 
-import mailing.models
+import massmailer.models
 
 
 class TemplateForm(forms.ModelForm):
     html_enabled = forms.BooleanField(initial=False, required=False, label=_("HTML enabled"))
     use_markdown = forms.BooleanField(initial=True, required=False, label=_("Generate HTML from plaintext"))
-    useful_queries = forms.ModelChoiceField(queryset=mailing.models.Query.objects.all(), required=False, label=_("Useful queries"))
+    useful_queries = forms.ModelChoiceField(queryset=massmailer.models.Query.objects.all(), required=False, label=_("Useful queries"))
     # for overwrite checking
     revisions = forms.IntegerField(widget=forms.HiddenInput())
 
     class Meta:
-        model = mailing.models.Template
+        model = massmailer.models.Template
         fields = ['name', 'description', 'subject', 'plain_body', 'html_body']
         widgets = {'description': forms.Textarea(attrs={'rows': 2})}
 
@@ -54,7 +54,7 @@ class TemplateForm(forms.ModelForm):
 
 class QueryForm(forms.ModelForm):
     class Meta:
-        model = mailing.models.Query
+        model = massmailer.models.Query
         fields = ['name', 'description', 'query', 'useful_with']
         widgets = {'description': forms.Textarea(attrs={'rows': 2})}
 
@@ -63,7 +63,7 @@ class CreateBatchForm(forms.ModelForm):
     FOOLPROOF_PHRASE = _("i am fine bothering %(n)s people")
 
     class Meta:
-        model = mailing.models.Batch
+        model = massmailer.models.Batch
         fields = ('name', 'template', 'query',)
 
     @classmethod
@@ -88,7 +88,7 @@ class CreateBatchForm(forms.ModelForm):
             # once the form is submitted once, add the foolproof test (we now know the user count)
             query = self.fields['query'].queryset.get(pk=self.data['query'])
 
-            result, user_qs = mailing.models.Query.execute(query.query)
+            result, user_qs = massmailer.models.Query.execute(query.query)
             count = len(user_qs)
             submit = _("Actually send to %(n)s people right now") % {'n': count}
             submit_cls = "btn-warning"

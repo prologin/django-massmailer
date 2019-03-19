@@ -2,7 +2,7 @@ from django.contrib import admin
 from django.db.models import Count
 from reversion.admin import VersionAdmin
 from django.utils.translation import ugettext_lazy as _
-import mailing.models
+import massmailer.models
 
 
 class TemplateAdmin(VersionAdmin):
@@ -14,7 +14,7 @@ class QueryAdmin(VersionAdmin):
 
 
 class BatchEmailInline(admin.TabularInline):
-    model = mailing.models.BatchEmail
+    model = massmailer.models.BatchEmail
     fields = readonly_fields = ['id', 'user', 'to', 'state_display']
     extra = max_num = 0
     can_delete = False
@@ -38,6 +38,6 @@ class BatchAdmin(admin.ModelAdmin):
     email_count.admin_order_field = 'email_count'
 
 
-admin.site.register(mailing.models.Template, TemplateAdmin)
-admin.site.register(mailing.models.Query, QueryAdmin)
-admin.site.register(mailing.models.Batch, BatchAdmin)
+admin.site.register(massmailer.models.Template, TemplateAdmin)
+admin.site.register(massmailer.models.Query, QueryAdmin)
+admin.site.register(massmailer.models.Batch, BatchAdmin)

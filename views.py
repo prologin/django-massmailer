@@ -26,15 +26,15 @@ from django.views.generic.list import ListView
 from reversion.views import RevisionMixin
 from rules.contrib.views import PermissionRequiredMixin
 
-import mailing.forms
-import mailing.models
-import mailing.tasks
-import mailing.query_parser
-from mailing.utils import JinjaEscapeExtension
+import massmailer.forms
+import massmailer.models
+import massmailer.tasks
+import massmailer.query_parser
+from massmailer.utils import JinjaEscapeExtension
 
 
 class MailingPermissionMixin(PermissionRequiredMixin):
-    permission_required = 'mailing.admin'
+    permission_required = 'massmailer.admin'
 
 
 class ObjectByIdMixin:
@@ -46,20 +46,20 @@ class ObjectByIdMixin:
 
 
 class DashboardView(MailingPermissionMixin, TemplateView):
-    template_name = 'mailing/dashboard.html'
+    template_name = 'massmailer/dashboard.html'
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        context['templates'] = mailing.models.Template.objects.annotate(query_count=Count('useful_queries'))
-        context['queries'] = mailing.models.Query.objects.annotate(template_count=Count('useful_with'))
+        context['templates'] = massmailer.models.Template.objects.annotate(query_count=Count('useful_queries'))
+        context['queries'] = massmailer.models.Query.objects.annotate(template_count=Count('useful_with'))
         return context
 
 
 class TemplateMixin(MailingPermissionMixin, RevisionMixin):
-    template_name = 'mailing/template/details.html'
+    template_name = 'massmailer/template/details.html'
     context_object_name = 'template'
-    model = mailing.models.Template
-    form_class = mailing.forms.TemplateForm
+    model = massmailer.models.Template
+    form_class = massmailer.forms.TemplateForm
 
 
 class CreateTemplateView(TemplateMixin, CreateView):
@@ -93,10 +93,10 @@ class TemplatePreviewView(MailingPermissionMixin, View):
         data = {}
         html_enabled = request.POST.get('html_enabled') == 'true'
 
-        query = mailing.models.Query.objects.get(pk=(request.POST['query']))
+        query = massmailer.models.Query.objects.get(pk=(request.POST['query']))
         page = int(request.POST['page'])
 
-        template = mailing.models.Template()
+        template = massmailer.models.Template()
         template.subject = request.POST['subject']
         template.plain_body = request.POST['plain']
 
@@ -124,21 +124,21 @@ class TemplatePreviewView(MailingPermissionMixin, View):
 
 
 class QueryMixin(MailingPermissionMixin, RevisionMixin):
-    template_name = 'mailing/query/details.html'
+    template_name = 'massmailer/query/details.html'
     context_object_name = 'query'
-    model = mailing.models.Query
-    form_class = mailing.forms.QueryForm
+    model = massmailer.models.Query
+    form_class = massmailer.forms.QueryForm
 
     @cached_property
     def available_enums(self):
         return sorted(({'name': name,
                         'members': [m.name for m in enum]}
-                       for name, enum in mailing.query_parser.available_enums.items()), key=lambda e: e['name'].lower())
+                       for name, enum in massmailer.query_parser.available_enums.items()), key=lambda e: e['name'].lower())
 
     @cached_property
     def available_funcs(self):
         return [{'name': name, 'doc': inspect.signature(func)}
-                for name, func in mailing.query_parser.available_funcs.items()]
+                for name, func in massmailer.query_parser.available_funcs.items()]
 
     @cached_property
     def available_models(self):
@@ -204,7 +204,7 @@ class QueryPreviewView(MailingPermissionMixin, View):
         page = int(request.POST['page'])
         try:
             # run the query
-            result, user_qs = mailing.models.Query.execute(query)
+            result, user_qs = massmailer.models.Query.execute(query)
             qs = result.queryset
             count = qs.count()
             user_count = user_qs.count()
@@ -225,7 +225,7 @@ class QueryPreviewView(MailingPermissionMixin, View):
                     'query': str(qs.query),
                     'result': instance}
         except Exception as e:
-            if isinstance(e, (mailing.query_parser.ParseError, FieldError)):
+            if isinstance(e, (massmailer.query_parser.ParseError, FieldError)):
                 error = str(e)
             elif isinstance(e, pyparsing.ParseException):
                 error = _("Syntax error at position %(pos)s.") % {'pos': e.loc}
@@ -236,21 +236,21 @@ class QueryPreviewView(MailingPermissionMixin, View):
 
 
 class BatchListView(PermissionRequiredMixin, ListView):
-    model = mailing.models.Batch
-    template_name = 'mailing/batch-list.html'
+    model = massmailer.models.Batch
+    template_name = 'massmailer/batch-list.html'
     context_object_name = 'batches'
     paginate_by = 25
-    permission_required = 'mailing.admin'
+    permission_required = 'massmailer.admin'
 
 
 class BatchCreateView(PermissionRequiredMixin, CreateView):
-    model = mailing.models.Batch
-    form_class = mailing.forms.CreateBatchForm
-    template_name = 'mailing/batch-create.html'
-    permission_required = 'mailing.send'
+    model = massmailer.models.Batch
+    form_class = massmailer.forms.CreateBatchForm
+    template_name = 'massmailer/batch-create.html'
+    permission_required = 'massmailer.send'
 
     def get_success_url(self):
-        return reverse('mailing:batch:detail', args=[self.object.pk])
+        return reverse('massmailer:batch:detail', args=[self.object.pk])
 
     def form_valid(self, form):
         with transaction.atomic():
@@ -261,7 +261,7 @@ class BatchCreateView(PermissionRequiredMixin, CreateView):
 
             emails = list(batch.build_emails())
             # create the batch emails
-            mailing.models.BatchEmail.objects.bulk_create(emails)
+            massmailer.models.BatchEmail.objects.bulk_create(emails)
 
         # create the tasks
         for email in emails:
@@ -274,11 +274,11 @@ class BatchCreateView(PermissionRequiredMixin, CreateView):
 
 
 class BatchDetailView(PermissionRequiredMixin, ListView):
-    model = mailing.models.BatchEmail
-    template_name = 'mailing/batch-emails.html'
+    model = massmailer.models.BatchEmail
+    template_name = 'massmailer/batch-emails.html'
     context_object_name = 'emails'
     paginate_by = 200
-    permission_required = 'mailing.admin'
+    permission_required = 'massmailer.admin'
 
     @property
     def batch_id(self):
@@ -286,7 +286,7 @@ class BatchDetailView(PermissionRequiredMixin, ListView):
 
     @cached_property
     def batch(self):
-        return (mailing.models.Batch.objects.prefetch_related('emails')
+        return (massmailer.models.Batch.objects.prefetch_related('emails')
                 .annotate(email_count=Count('emails'))
                 .get(pk=self.batch_id))
 
@@ -300,11 +300,11 @@ class BatchDetailView(PermissionRequiredMixin, ListView):
 
 
 class BatchRetryView(PermissionRequiredMixin, UpdateView):
-    model = mailing.models.Batch
+    model = massmailer.models.Batch
     pk_url_kwarg = 'id'
     fields = []
-    success_url = reverse_lazy('mailing:batch:list')
-    permission_required = 'mailing.send'
+    success_url = reverse_lazy('massmailer:batch:list')
+    permission_required = 'massmailer.send'
 
     def form_valid(self, form):
         # create the tasks
@@ -314,7 +314,7 @@ class BatchRetryView(PermissionRequiredMixin, UpdateView):
 
 
 class BatchDeleteView(PermissionRequiredMixin, DeleteView):
-    model = mailing.models.Batch
+    model = massmailer.models.Batch
     pk_url_kwarg = 'id'
-    success_url = reverse_lazy('mailing:batch:list')
-    permission_required = 'mailing.send'
+    success_url = reverse_lazy('massmailer:batch:list')
+    permission_required = 'massmailer.send'
