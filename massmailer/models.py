@@ -24,12 +24,16 @@ from massmailer.query_parser import parse_query, ParseError
 from massmailer.utils import override_locale
 from massmailer.utils.db import ConditionalSum, CaseMapping
 
-TEMPLATE_OPTS = {'autoescape': False,
-                 'trim_blocks': True,
-                 'undefined': jinja2.runtime.StrictUndefined}
+TEMPLATE_OPTS = {
+    'autoescape': False,
+    'trim_blocks': True,
+    'undefined': jinja2.runtime.StrictUndefined,
+}
 
 VARIABLE_PLACEHOLDER = '<span class="placeholder">\u25cc</span>'
-RE_TAG = re.compile(r'\{([%#])(.*?)\1\}|\{\{(.*?)\}\}', re.MULTILINE | re.DOTALL)
+RE_TAG = re.compile(
+    r'\{([%#])(.*?)\1\}|\{\{(.*?)\}\}', re.MULTILINE | re.DOTALL
+)
 
 
 class MailState(enum.IntEnum):
@@ -56,7 +60,9 @@ class Template(models.Model):
     description = models.TextField(blank=True, verbose_name=_("Description"))
     subject = models.TextField(verbose_name=_("Subject template"))
     plain_body = models.TextField(verbose_name=_("Plaintext body template"))
-    html_body = models.TextField(blank=True, verbose_name=_("HTML body template"))
+    html_body = models.TextField(
+        blank=True, verbose_name=_("HTML body template")
+    )
 
     class Meta:
         ordering = ['name']
@@ -82,10 +88,14 @@ class Template(models.Model):
         return getattr(self, attr)
 
     def template(self, item: TemplateItem):
-        return jinja2.Template(source=self.template_source(item), **self.template_opts(item))
+        return jinja2.Template(
+            source=self.template_source(item), **self.template_opts(item)
+        )
 
     def variables(self, item: TemplateItem):
-        ast = jinja2.Environment(**self.template_opts(item)).parse(source=self.template_source(item))
+        ast = jinja2.Environment(**self.template_opts(item)).parse(
+            source=self.template_source(item)
+        )
         return jinja2.meta.find_undeclared_variables(ast)
 
     def render(self, item: TemplateItem, context: dict):
@@ -111,8 +121,10 @@ class Template(models.Model):
             try:
                 declared = self.variables(item)
                 rendered = self.render(item, context)
-                data['context'] = {'declared': list(context.keys() - declared),
-                                   'missing': list(declared - context.keys())}
+                data['context'] = {
+                    'declared': list(context.keys() - declared),
+                    'missing': list(declared - context.keys()),
+                }
                 data['content'] = rendered
             except jinja2.UndefinedError as error:
                 data['error'] = {'type': 'undefined', 'msg': error.message}
@@ -133,15 +145,22 @@ class Template(models.Model):
         return self.preview(TemplateItem.html)
 
     def get_absolute_url(self):
-        return reverse('massmailer:template:update', kwargs={'id': self.pk, 'slug': slugify(self.name)})
+        return reverse(
+            'massmailer:template:update',
+            kwargs={'id': self.pk, 'slug': slugify(self.name)},
+        )
 
 
 class Query(models.Model):
     name = models.CharField(max_length=144, verbose_name=_("Name"))
     description = models.TextField(blank=True, verbose_name=_("Description"))
     query = models.TextField(verbose_name=_("Query"))
-    useful_with = models.ManyToManyField(Template, blank=True, related_name='useful_queries',
-                                         verbose_name=_("Useful with templates"))
+    useful_with = models.ManyToManyField(
+        Template,
+        blank=True,
+        related_name='useful_queries',
+        verbose_name=_("Useful with templates"),
+    )
 
     class Meta:
         ordering = ['name']
@@ -152,7 +171,10 @@ class Query(models.Model):
         return self.name
 
     def get_absolute_url(self):
-        return reverse('massmailer:query:update', kwargs={'id': self.pk, 'slug': slugify(self.name)})
+        return reverse(
+            'massmailer:query:update',
+            kwargs={'id': self.pk, 'slug': slugify(self.name)},
+        )
 
     def get_results(self):
         return self.execute(self.query)
@@ -173,15 +195,30 @@ class Query(models.Model):
         # if queryset is not a User queryset, require a "user" alias
         if user_qs.model != User:
             if 'user' not in result.aliases:
-                raise ParseError(_("The root model is not %(model)s. You must provide a `user` alias.") %
-                                 {'model': user_label})
+                raise ParseError(
+                    _(
+                        "The root model is not %(model)s. You must provide a `user` alias."
+                    )
+                    % {'model': user_label}
+                )
             user_field = result.aliases['user']
             try:
                 if qs.model._meta.get_field(user_field).related_model != User:
-                    raise ParseError(_("%(label)s.%(field)s is not %(model)s") %
-                                     {'label': qs_label, 'field': user_field, 'model': user_label})
+                    raise ParseError(
+                        _("%(label)s.%(field)s is not %(model)s")
+                        % {
+                            'label': qs_label,
+                            'field': user_field,
+                            'model': user_label,
+                        }
+                    )
             except FieldDoesNotExist:
-                raise ParseError(_("%(label)s has no field `%(field)s`" % {'label': qs_label, 'field': user_field}))
+                raise ParseError(
+                    _(
+                        "%(label)s has no field `%(field)s`"
+                        % {'label': qs_label, 'field': user_field}
+                    )
+                )
             user_pks = set(qs.values_list(user_field, flat=True))
             user_qs = User._default_manager.filter(pk__in=user_pks)
 
@@ -193,9 +230,12 @@ class BatchManager(models.Manager):
         total = F('email_count')
         ecount = lambda e: F('{}_email_count'.format(e))
 
-        qs = (super().get_queryset()
-              .select_related('query', 'template', 'initiator')
-              .prefetch_related('emails'))
+        qs = (
+            super()
+            .get_queryset()
+            .select_related('query', 'template', 'initiator')
+            .prefetch_related('emails')
+        )
 
         def annotate(key, value):
             nonlocal qs
@@ -204,24 +244,58 @@ class BatchManager(models.Manager):
         def annotate_count(name, expr):
             count_field = ecount(name)
             annotate(count_field.name, expr)
-            annotate('{}_percentage'.format(name), 100. * count_field / total)
+            annotate('{}_percentage'.format(name), 100.0 * count_field / total)
 
         annotate(total.name, Count('emails'))
 
         for state in MailState:
-            annotate_count(state.name, ConditionalSum(emails__state=state.value))
+            annotate_count(
+                state.name, ConditionalSum(emails__state=state.value)
+            )
 
         annotate_count('unsent', ecount('pending') + ecount('sending'))
-        annotate_count('erroneous', reduce(operator.add, (ecount(state.name) for state in MailState.bad())))
-        annotate('completed', CaseMapping(ecount('unsent').name, [(0, True)], default=False, output_field=BooleanField()))
+        annotate_count(
+            'erroneous',
+            reduce(
+                operator.add, (ecount(state.name) for state in MailState.bad())
+            ),
+        )
+        annotate(
+            'completed',
+            CaseMapping(
+                ecount('unsent').name,
+                [(0, True)],
+                default=False,
+                output_field=BooleanField(),
+            ),
+        )
         return qs
 
 
 class Batch(models.Model):
-    name = models.CharField(max_length=140, blank=True, verbose_name=_("Optional name"))
-    template = models.ForeignKey(Template, null=True, on_delete=models.SET_NULL, related_name='batches', verbose_name=_("Template"))
-    query = models.ForeignKey(Query, null=True, on_delete=models.SET_NULL, related_name='batches', verbose_name=_("Query"))
-    initiator = models.ForeignKey(settings.AUTH_USER_MODEL, null=True, on_delete=models.SET_NULL, related_name='massmailer_batches')
+    name = models.CharField(
+        max_length=140, blank=True, verbose_name=_("Optional name")
+    )
+    template = models.ForeignKey(
+        Template,
+        null=True,
+        on_delete=models.SET_NULL,
+        related_name='batches',
+        verbose_name=_("Template"),
+    )
+    query = models.ForeignKey(
+        Query,
+        null=True,
+        on_delete=models.SET_NULL,
+        related_name='batches',
+        verbose_name=_("Query"),
+    )
+    initiator = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        null=True,
+        on_delete=models.SET_NULL,
+        related_name='massmailer_batches',
+    )
     date_created = models.DateTimeField(default=timezone.now, null=False)
 
     class Meta:
@@ -243,7 +317,9 @@ class Batch(models.Model):
 
     @property
     def erroneous_emails(self):
-        return self.emails.filter(state__in=[state.value for state in MailState.bad()])
+        return self.emails.filter(
+            state__in=[state.value for state in MailState.bad()]
+        )
 
     def build_emails(self):
         result, user_qs = self.query.get_results()
@@ -252,12 +328,17 @@ class Batch(models.Model):
         if result.queryset.model is get_user_model():
             user_getter = lambda object: object
         else:
-            user_getter = lambda object: getattr(object, result.aliases['user'])
+            user_getter = lambda object: getattr(
+                object, result.aliases['user']
+            )
 
         html_enabled = self.template.html_enabled
 
         for object in queryset:
-            context = {alias: getattr(object, field) for alias, field in result.aliases.items()}
+            context = {
+                alias: getattr(object, field)
+                for alias, field in result.aliases.items()
+            }
             context[result.model_name] = object
             user = user_getter(object)
             yield BatchEmail(
@@ -266,17 +347,27 @@ class Batch(models.Model):
                 to=user.email,
                 subject=self.template.render(TemplateItem.subject, context),
                 body=self.template.render(TemplateItem.plain, context),
-                html_body=self.template.render(TemplateItem.html, context) if html_enabled else "",
+                html_body=self.template.render(TemplateItem.html, context)
+                if html_enabled
+                else "",
             )
 
 
 class BatchEmail(models.Model):
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
-    state = models.PositiveIntegerField(db_index=True, default=MailState.pending.value)
-    batch = models.ForeignKey(Batch, related_name='emails', on_delete=models.CASCADE)
-    user = models.ForeignKey(settings.AUTH_USER_MODEL, null=True, on_delete=models.SET_NULL)
+    state = models.PositiveIntegerField(
+        db_index=True, default=MailState.pending.value
+    )
+    batch = models.ForeignKey(
+        Batch, related_name='emails', on_delete=models.CASCADE
+    )
+    user = models.ForeignKey(
+        settings.AUTH_USER_MODEL, null=True, on_delete=models.SET_NULL
+    )
 
-    to = models.EmailField(blank=False)  # in case user is deleted or changes email
+    to = models.EmailField(
+        blank=False
+    )  # in case user is deleted or changes email
     subject = models.TextField(blank=True)
     body = models.TextField(blank=True)
     html_body = models.TextField(blank=True, default="")
@@ -305,9 +396,16 @@ class BatchEmail(models.Model):
         # add a custom header to resolve the mail ID from amazon bounces/complaints
         headers = {'X-MID': self.id}
         if self.user:
-            headers['List-Unsubscribe'] = '<{}>'.format(self.user.get_unsubscribe_url())
+            headers['List-Unsubscribe'] = '<{}>'.format(
+                self.user.get_unsubscribe_url()
+            )
 
-        kwargs = {'to': [self.to], 'subject': self.subject, 'body': self.body, 'headers': headers}
+        kwargs = {
+            'to': [self.to],
+            'subject': self.subject,
+            'body': self.body,
+            'headers': headers,
+        }
 
         if self.html_body:
             email = mail.EmailMultiAlternatives(**kwargs)
@@ -318,4 +416,5 @@ class BatchEmail(models.Model):
 
     def send_task(self):
         from massmailer.tasks import send_email
+
         return send_email.apply_async(args=[self.pk], task_id=self.task_id)

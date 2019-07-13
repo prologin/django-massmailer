@@ -11,12 +11,15 @@ from massmailer.models import MailState, BatchEmail
     default_retry_delay=60,
     max_retries=2,
     soft_time_limit=10,
-    time_limit=60)
+    time_limit=60,
+)
 def send_email(self, mail_id):
     def set_state(old_state, new_state):
         with transaction.atomic():
             try:
-                email = BatchEmail.objects.get(pk=mail_id, state=old_state.value)
+                email = BatchEmail.objects.get(
+                    pk=mail_id, state=old_state.value
+                )
             except BatchEmail.DoesNotExist:
                 return None
             email.state = new_state.value
@@ -35,7 +38,11 @@ def send_email(self, mail_id):
         # this can take a long time or fail
         ret = python_mail.send(fail_silently=False)
         if not ret:
-            raise RuntimeError("mail.send() should have returned a truthful value; returned {}".format(ret))
+            raise RuntimeError(
+                "mail.send() should have returned a truthful value; returned {}".format(
+                    ret
+                )
+            )
     except Exception as exc:
         # atomically push to *pending* queue (for retry)
         if not set_state(MailState.sending, MailState.pending):

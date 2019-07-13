@@ -15,9 +15,17 @@ import massmailer.models
 
 
 class TemplateForm(forms.ModelForm):
-    html_enabled = forms.BooleanField(initial=False, required=False, label=_("HTML enabled"))
-    use_markdown = forms.BooleanField(initial=True, required=False, label=_("Generate HTML from plaintext"))
-    useful_queries = forms.ModelChoiceField(queryset=massmailer.models.Query.objects.all(), required=False, label=_("Useful queries"))
+    html_enabled = forms.BooleanField(
+        initial=False, required=False, label=_("HTML enabled")
+    )
+    use_markdown = forms.BooleanField(
+        initial=True, required=False, label=_("Generate HTML from plaintext")
+    )
+    useful_queries = forms.ModelChoiceField(
+        queryset=massmailer.models.Query.objects.all(),
+        required=False,
+        label=_("Useful queries"),
+    )
     # for overwrite checking
     revisions = forms.IntegerField(widget=forms.HiddenInput())
 
@@ -29,7 +37,11 @@ class TemplateForm(forms.ModelForm):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.fields['revisions'].initial = self._revision_count()
-        if self.instance and self.instance.pk and self.instance.html_body.strip():
+        if (
+            self.instance
+            and self.instance.pk
+            and self.instance.html_body.strip()
+        ):
             self.fields['html_enabled'].initial = True
 
     def _revision_count(self):
@@ -49,7 +61,9 @@ class TemplateForm(forms.ModelForm):
     def clean(self):
         data = self.cleaned_data
         if data['html_enabled'] and not data.get('html_body', '').strip():
-            raise forms.ValidationError(_("You must provide an HTML template if HTML is enabled."))
+            raise forms.ValidationError(
+                _("You must provide an HTML template if HTML is enabled.")
+            )
 
 
 class QueryForm(forms.ModelForm):
@@ -64,12 +78,17 @@ class CreateBatchForm(forms.ModelForm):
 
     class Meta:
         model = massmailer.models.Batch
-        fields = ('name', 'template', 'query',)
+        fields = ('name', 'template', 'query')
 
     @classmethod
     def foolproof_field(cls, count):
         phrase = cls.FOOLPROOF_PHRASE % {'n': count}
-        field = forms.CharField(label=_("Foolproofing"), widget=forms.TextInput(attrs={'autocomplete': 'off', 'autofocus': True}))
+        field = forms.CharField(
+            label=_("Foolproofing"),
+            widget=forms.TextInput(
+                attrs={'autocomplete': 'off', 'autofocus': True}
+            ),
+        )
         field.help_text = _("Type “%s” above") % "\ufeff".join(phrase)
         field.validators.append(RegexValidator(re.escape(phrase)))
         return field
@@ -90,7 +109,9 @@ class CreateBatchForm(forms.ModelForm):
 
             result, user_qs = massmailer.models.Query.execute(query.query)
             count = len(user_qs)
-            submit = _("Actually send to %(n)s people right now") % {'n': count}
+            submit = _("Actually send to %(n)s people right now") % {
+                'n': count
+            }
             submit_cls = "btn-warning"
 
             for field in CreateBatchForm.Meta.fields:
@@ -100,13 +121,19 @@ class CreateBatchForm(forms.ModelForm):
                 disabled_copy.disabled = True
                 self.fields[name] = disabled_copy
                 self.initial[name] = self.data[field]  # copy value
-                f.widget = forms.HiddenInput()   # hide original data
+                f.widget = forms.HiddenInput()  # hide original data
 
             if not self.data.get('name'):
                 # generate a nice name
-                template = self.fields['template'].queryset.get(pk=self.data['template'])
-                name = '{} ⋅ {} ⋅ {}'.format(template, query, timezone.now().date())
-                self.data['name'] = self.initial['name'] = self.initial['dis_name'] = name
+                template = self.fields['template'].queryset.get(
+                    pk=self.data['template']
+                )
+                name = '{} ⋅ {} ⋅ {}'.format(
+                    template, query, timezone.now().date()
+                )
+                self.data['name'] = self.initial['name'] = self.initial[
+                    'dis_name'
+                ] = name
 
             if self.foolproof_enabled():
                 # add foolproof
@@ -117,5 +144,10 @@ class CreateBatchForm(forms.ModelForm):
         self.helper.label_class = 'col-lg-4'
         self.helper.field_class = 'col-lg-8'
         # add the submit button
-        self.helper.layout.append(StrictButton(format_html('<i class="fa fa-paper-plane-o"></i> {}', submit),
-                                               type="submit", css_class="{} btn-block".format(submit_cls)))
+        self.helper.layout.append(
+            StrictButton(
+                format_html('<i class="fa fa-paper-plane-o"></i> {}', submit),
+                type="submit",
+                css_class="{} btn-block".format(submit_cls),
+            )
+        )

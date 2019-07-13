@@ -21,7 +21,12 @@ from django.utils.translation import ugettext_lazy as _
 from django.views.decorators.csrf import csrf_exempt
 from django.views.generic import View
 from django.views.generic.base import TemplateView
-from django.views.generic.edit import UpdateView, CreateView, ModelFormMixin, DeleteView
+from django.views.generic.edit import (
+    UpdateView,
+    CreateView,
+    ModelFormMixin,
+    DeleteView,
+)
 from django.views.generic.list import ListView
 from reversion.views import RevisionMixin
 from rules.contrib.views import PermissionRequiredMixin
@@ -50,8 +55,12 @@ class DashboardView(MailingPermissionMixin, TemplateView):
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        context['templates'] = massmailer.models.Template.objects.annotate(query_count=Count('useful_queries'))
-        context['queries'] = massmailer.models.Query.objects.annotate(template_count=Count('useful_with'))
+        context['templates'] = massmailer.models.Template.objects.annotate(
+            query_count=Count('useful_queries')
+        )
+        context['queries'] = massmailer.models.Query.objects.annotate(
+            template_count=Count('useful_with')
+        )
         return context
 
 
@@ -73,15 +82,20 @@ class CreateTemplateView(TemplateMixin, CreateView):
         return super(ModelFormMixin, self).form_valid(form)
 
     def get_object(self):
-        return None # the template isn't in db yet
+        return None  # the template isn't in db yet
 
 
 class UpdateTemplateView(TemplateMixin, ObjectByIdMixin, UpdateView):
     def form_valid(self, form):
         if form.was_overwritten():
             form.reset_overwritten()
-            form.add_error(None, _("The form was modified and saved while you were editing. "
-                                   "Please merge with current version."))
+            form.add_error(
+                None,
+                _(
+                    "The form was modified and saved while you were editing. "
+                    "Please merge with current version."
+                ),
+            )
             return self.form_invalid(form)
         return super().form_valid(form)
 
@@ -103,7 +117,9 @@ class TemplatePreviewView(MailingPermissionMixin, View):
         if html_enabled:
             if request.POST.get('use_markdown') == 'true':
                 md = markdown.Markdown(extensions=[JinjaEscapeExtension()])
-                html = data['html_template'] = md.convert(bleach.clean(template.plain_body))
+                html = data['html_template'] = md.convert(
+                    bleach.clean(template.plain_body)
+                )
             else:
                 html = request.POST['html']
             template.html_body = html
@@ -112,10 +128,17 @@ class TemplatePreviewView(MailingPermissionMixin, View):
         qs = results.queryset
         count = qs.count()
         user_count = user_qs.count()
-        data['query'] = {'count': count, 'user_count': user_count, 'page': min(count, page)}
+        data['query'] = {
+            'count': count,
+            'user_count': user_count,
+            'page': min(count, page),
+        }
         try:
             object = qs[page]
-            context = {alias: getattr(object, field) for alias, field in results.aliases.items()}
+            context = {
+                alias: getattr(object, field)
+                for alias, field in results.aliases.items()
+            }
             context[results.model_name] = object
             data['render'] = template.full_preview(context)
         except IndexError:
@@ -131,14 +154,20 @@ class QueryMixin(MailingPermissionMixin, RevisionMixin):
 
     @cached_property
     def available_enums(self):
-        return sorted(({'name': name,
-                        'members': [m.name for m in enum]}
-                       for name, enum in massmailer.query_parser.available_enums.items()), key=lambda e: e['name'].lower())
+        return sorted(
+            (
+                {'name': name, 'members': [m.name for m in enum]}
+                for name, enum in massmailer.query_parser.available_enums.items()
+            ),
+            key=lambda e: e['name'].lower(),
+        )
 
     @cached_property
     def available_funcs(self):
-        return [{'name': name, 'doc': inspect.signature(func)}
-                for name, func in massmailer.query_parser.available_funcs.items()]
+        return [
+            {'name': name, 'doc': inspect.signature(func)}
+            for name, func in massmailer.query_parser.available_funcs.items()
+        ]
 
     @cached_property
     def available_models(self):
@@ -153,15 +182,26 @@ class QueryMixin(MailingPermissionMixin, RevisionMixin):
                     pass
 
         models = apps.get_models()
-        models = ({'name': str(model._meta.verbose_name_plural.capitalize()),
-                   'cls_name': model.__name__,
-                   'app': model._meta.app_label,
-                   'is_user': model is User,
-                   'user_field': find_user_field(model),
-                   'label': model._meta.label}
-                  for model in models)
-        return sorted(models,
-                      key=lambda e: (not e['is_user'], e['user_field'] is None, e['app'].lower(), e['name'].lower()))
+        models = (
+            {
+                'name': str(model._meta.verbose_name_plural.capitalize()),
+                'cls_name': model.__name__,
+                'app': model._meta.app_label,
+                'is_user': model is User,
+                'user_field': find_user_field(model),
+                'label': model._meta.label,
+            }
+            for model in models
+        )
+        return sorted(
+            models,
+            key=lambda e: (
+                not e['is_user'],
+                e['user_field'] is None,
+                e['app'].lower(),
+                e['name'].lower(),
+            ),
+        )
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
@@ -182,7 +222,7 @@ class CreateQueryView(QueryMixin, CreateView):
         return super(ModelFormMixin, self).form_valid(form)
 
     def get_object(self):
-        return None # the query isn't in the db yet
+        return None  # the query isn't in the db yet
 
 
 class UpdateQueryView(QueryMixin, ObjectByIdMixin, UpdateView):
@@ -197,7 +237,9 @@ class QueryPreviewView(MailingPermissionMixin, View):
             return None
         if not isinstance(obj, models.Model):
             return None
-        return json.loads(serializers.get_serializer('json')().serialize([obj]))[0]
+        return json.loads(
+            serializers.get_serializer('json')().serialize([obj])
+        )[0]
 
     def post(self, request, *args, **kwargs):
         query = request.POST['query']
@@ -217,13 +259,15 @@ class QueryPreviewView(MailingPermissionMixin, View):
                     if serialized:
                         instance[name] = serialized
 
-            data = {'count': count,
-                    'user_count': user_count,
-                    'model': qs.model._meta.label,
-                    'model_name': result.model_name,
-                    'aliases': list(result.aliases.items()),
-                    'query': str(qs.query),
-                    'result': instance}
+            data = {
+                'count': count,
+                'user_count': user_count,
+                'model': qs.model._meta.label,
+                'model_name': result.model_name,
+                'aliases': list(result.aliases.items()),
+                'query': str(qs.query),
+                'result': instance,
+            }
         except Exception as e:
             if isinstance(e, (massmailer.query_parser.ParseError, FieldError)):
                 error = str(e)
@@ -270,7 +314,7 @@ class BatchCreateView(PermissionRequiredMixin, CreateView):
         return super().form_valid(form)
 
     def get_object(self):
-        return None # the batch isn't in the db yet
+        return None  # the batch isn't in the db yet
 
 
 class BatchDetailView(PermissionRequiredMixin, ListView):
@@ -286,9 +330,11 @@ class BatchDetailView(PermissionRequiredMixin, ListView):
 
     @cached_property
     def batch(self):
-        return (massmailer.models.Batch.objects.prefetch_related('emails')
-                .annotate(email_count=Count('emails'))
-                .get(pk=self.batch_id))
+        return (
+            massmailer.models.Batch.objects.prefetch_related('emails')
+            .annotate(email_count=Count('emails'))
+            .get(pk=self.batch_id)
+        )
 
     def get_queryset(self):
         return self.batch.emails.all()

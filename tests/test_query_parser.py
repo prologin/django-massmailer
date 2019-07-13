@@ -9,11 +9,15 @@ class QueryParserTestCase(TestCase):
     def setUp(self):
         from tests.models import SomeModel, SomeChild
 
-        foo = SomeModel.objects.create(text_field="foo", int_field=42, bool_field=True)
+        foo = SomeModel.objects.create(
+            text_field="foo", int_field=42, bool_field=True
+        )
         SomeChild.objects.create(parent=foo, child_field="child1")
         SomeChild.objects.create(parent=foo, child_field="child2")
 
-        SomeModel.objects.create(text_field="BAROO", int_field=1337, bool_field=False)
+        SomeModel.objects.create(
+            text_field="BAROO", int_field=1337, bool_field=False
+        )
 
     def test_django_manual_registry(self):
         qp = QueryParser(load_django_funcs=False, load_django_models=False)
@@ -97,7 +101,9 @@ class QueryParserTestCase(TestCase):
 
     def test_query_or_filter(self):
         qp = QueryParser(load_django_funcs=False)
-        r = qp.parse_query("SomeModel .int_field = 42 or .text_field = 'BAROO'")
+        r = qp.parse_query(
+            "SomeModel .int_field = 42 or .text_field = 'BAROO'"
+        )
         self.assertEqual(r.queryset.count(), 2)
 
     def test_query_model_alias(self):

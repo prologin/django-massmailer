@@ -72,7 +72,9 @@ class QueryParser:
             self.available_funcs.update(_find_subclasses(models.Func))
 
         if load_django_models:
-            self.available_models.update({model.__name__: model for model in apps.get_models()})
+            self.available_models.update(
+                {model.__name__: model for model in apps.get_models()}
+            )
 
     def parse_query(self, query: str) -> ParseResult:
         func_i = 0
@@ -91,7 +93,9 @@ class QueryParser:
                 try:
                     member = enum(member)
                 except ValueError:
-                    raise ParseError("invalid member '{}' of {}".format(member, enum))
+                    raise ParseError(
+                        "invalid member '{}' of {}".format(member, enum)
+                    )
             return member.value
 
         def parse_string(tokens):
@@ -208,7 +212,9 @@ class QueryParser:
             result = ParseResult()
             result.queryset = qs
             result.model_name = model_name
-            result.aliases = {name: field for name, field in tokens.get('aliases', [])}
+            result.aliases = {
+                name: field for name, field in tokens.get('aliases', [])
+            }
             result.aliases.pop(model_name, None)
             return result
 
@@ -220,29 +226,65 @@ class QueryParser:
         plusorminus = p.Literal('+') | p.Literal('-')
         number = p.Word(p.nums)
         integer = p.Combine(p.Optional(plusorminus) + number)
-        floatnumber = p.Combine(integer +
-                                p.Optional(point + p.Optional(number)) +
-                                p.Optional(expo + integer))
-        hexnumber = p.Combine(p.Optional(plusorminus) + p.CaselessLiteral('0x') + p.Word(p.hexnums))
-        numscalar = (hexnumber | floatnumber | integer).setParseAction(lambda t: ast.literal_eval(t[0]))
-        boolean = (p.Keyword('true') | p.Keyword('false')).setParseAction(lambda t: t[0].lower() == 'true')
+        floatnumber = p.Combine(
+            integer
+            + p.Optional(point + p.Optional(number))
+            + p.Optional(expo + integer)
+        )
+        hexnumber = p.Combine(
+            p.Optional(plusorminus)
+            + p.CaselessLiteral('0x')
+            + p.Word(p.hexnums)
+        )
+        numscalar = (hexnumber | floatnumber | integer).setParseAction(
+            lambda t: ast.literal_eval(t[0])
+        )
+        boolean = (p.Keyword('true') | p.Keyword('false')).setParseAction(
+            lambda t: t[0].lower() == 'true'
+        )
         alpha_under = p.Regex(r'[a-z][a-z0-9]*(_[a-z0-9]+)*', re.I)
-        enumvalue = p.Combine(alpha_under + '.' + alpha_under + '.' + alpha_under).setParseAction(parse_enum)
-        string = (p.Optional(p.Literal('i')).setResultsName('nocase') +
-                  p.quotedString.setParseAction(p.removeQuotes).setResultsName('string')).setParseAction(parse_string)
-        value = ((string | numscalar | boolean | enumvalue)
-                 .setResultsName('value').setParseAction(lambda t: t[0]))
-        model = p.Regex(r'([A-Z][a-z0-9]*)+').setParseAction(parse_model).setResultsName('model')
-        field_name = (p.OneOrMore(p.Suppress('.') + alpha_under)
-                      .setParseAction(parse_field).setResultsName('field'))
-        operation = ((p.Word(p.alphas).setResultsName('func_name') +
-                      p.Suppress('(') + field_name.setResultsName('func_field') + p.Suppress(')'))
-                     .setResultsName('operation'))
+        enumvalue = p.Combine(
+            alpha_under + '.' + alpha_under + '.' + alpha_under
+        ).setParseAction(parse_enum)
+        string = (
+            p.Optional(p.Literal('i')).setResultsName('nocase')
+            + p.quotedString.setParseAction(p.removeQuotes).setResultsName(
+                'string'
+            )
+        ).setParseAction(parse_string)
+        value = (
+            (string | numscalar | boolean | enumvalue)
+            .setResultsName('value')
+            .setParseAction(lambda t: t[0])
+        )
+        model = (
+            p.Regex(r'([A-Z][a-z0-9]*)+')
+            .setParseAction(parse_model)
+            .setResultsName('model')
+        )
+        field_name = (
+            p.OneOrMore(p.Suppress('.') + alpha_under)
+            .setParseAction(parse_field)
+            .setResultsName('field')
+        )
+        operation = (
+            p.Word(p.alphas).setResultsName('func_name')
+            + p.Suppress('(')
+            + field_name.setResultsName('func_field')
+            + p.Suppress(')')
+        ).setResultsName('operation')
         field = field_name | operation
         is_kw = p.Keyword('is')
-        negation = p.Optional(p.Keyword('not')).setParseAction(lambda t: bool(t)).setResultsName('negation')
-        negation_does = (p.Optional(p.Keyword("doesn't") | p.Keyword("does not"))
-                         .setParseAction(lambda t: bool(t)).setResultsName('negation'))
+        negation = (
+            p.Optional(p.Keyword('not'))
+            .setParseAction(lambda t: bool(t))
+            .setResultsName('negation')
+        )
+        negation_does = (
+            p.Optional(p.Keyword("doesn't") | p.Keyword("does not"))
+            .setParseAction(lambda t: bool(t))
+            .setResultsName('negation')
+        )
         equality = (field + p.Suppress('=') + value).setResultsName('=')
         inequality = (field + p.Suppress('!=') + value).setResultsName('!=')
         lt = (field + p.Suppress('<') + value).setResultsName('<')
@@ -251,42 +293,90 @@ class QueryParser:
         gte = (field + p.Suppress('>=') + value).setResultsName('>=')
         null_or_none = p.Keyword('null') | p.Keyword('none')
         null = (field + is_kw + negation + null_or_none).setResultsName('null')
-        empty = (field + is_kw + negation + p.Keyword('empty')).setResultsName('empty')
-        contains = (field + negation_does + (p.Keyword('contain') | p.Keyword('contains')) +
-                    string.setResultsName('value')).setResultsName('contains')
-        startswith = (field + negation_does + (p.Keyword('start with') | p.Keyword('starts with')) +
-                      string.setResultsName('value')).setResultsName('startswith')
-        endswith = (field + negation_does + (p.Keyword('end with') | p.Keyword('ends with')) +
-                    string.setResultsName('value')).setResultsName('endswith')
-        matches = (field + negation_does + (p.Keyword('match') | p.Keyword('matches')) +
-                   string.setResultsName('value')).setResultsName('matches')
-        between = (field + negation +
-                   p.Keyword('between') + value.setResultsName('min') + p.Keyword('and') +
-                   value.setResultsName('max')).setResultsName('between')
-        clause = ((equality | inequality | lte | gte | lt | gt | between |
-                   null | empty | contains | startswith | endswith | matches)
-                  .setParseAction(parse_clause).setResultsName('comparison'))
+        empty = (field + is_kw + negation + p.Keyword('empty')).setResultsName(
+            'empty'
+        )
+        contains = (
+            field
+            + negation_does
+            + (p.Keyword('contain') | p.Keyword('contains'))
+            + string.setResultsName('value')
+        ).setResultsName('contains')
+        startswith = (
+            field
+            + negation_does
+            + (p.Keyword('start with') | p.Keyword('starts with'))
+            + string.setResultsName('value')
+        ).setResultsName('startswith')
+        endswith = (
+            field
+            + negation_does
+            + (p.Keyword('end with') | p.Keyword('ends with'))
+            + string.setResultsName('value')
+        ).setResultsName('endswith')
+        matches = (
+            field
+            + negation_does
+            + (p.Keyword('match') | p.Keyword('matches'))
+            + string.setResultsName('value')
+        ).setResultsName('matches')
+        between = (
+            field
+            + negation
+            + p.Keyword('between')
+            + value.setResultsName('min')
+            + p.Keyword('and')
+            + value.setResultsName('max')
+        ).setResultsName('between')
+        clause = (
+            (
+                equality
+                | inequality
+                | lte
+                | gte
+                | lt
+                | gt
+                | between
+                | null
+                | empty
+                | contains
+                | startswith
+                | endswith
+                | matches
+            )
+            .setParseAction(parse_clause)
+            .setResultsName('comparison')
+        )
         oper_not = p.Keyword('not')
         oper_and = p.Keyword('and')
         oper_or = p.Keyword('or')
-        filter = p.operatorPrecedence(clause + comments, [
-            (oper_not, 1, p.opAssoc.RIGHT),
-            (oper_or, 2, p.opAssoc.LEFT),
-            (p.Optional(oper_and, default='and'), 2, p.opAssoc.LEFT),
-        ]).setParseAction(parse_filter)
-        alias = (p.Keyword('alias') +
-                 alpha_under.setResultsName('name') +
-                 p.Optional(p.Suppress('=') + field_name.setResultsName('field')) +
-                 comments).setParseAction(lambda t: (t['name'], t.get('field', t['name'])))
-        stmt = (p.stringStart() +
-                comments +
-                model +
-                p.Optional((p.Suppress(p.Keyword('as')) + alpha_under)).setResultsName('model_name') +
-                comments +
-                p.Optional(filter).setResultsName('filter') +
-                comments +
-                p.ZeroOrMore(alias).setResultsName('aliases') +
-                comments +
-                p.StringEnd()).setParseAction(parse)
+        filter = p.operatorPrecedence(
+            clause + comments,
+            [
+                (oper_not, 1, p.opAssoc.RIGHT),
+                (oper_or, 2, p.opAssoc.LEFT),
+                (p.Optional(oper_and, default='and'), 2, p.opAssoc.LEFT),
+            ],
+        ).setParseAction(parse_filter)
+        alias = (
+            p.Keyword('alias')
+            + alpha_under.setResultsName('name')
+            + p.Optional(p.Suppress('=') + field_name.setResultsName('field'))
+            + comments
+        ).setParseAction(lambda t: (t['name'], t.get('field', t['name'])))
+        stmt = (
+            p.stringStart()
+            + comments
+            + model
+            + p.Optional(
+                (p.Suppress(p.Keyword('as')) + alpha_under)
+            ).setResultsName('model_name')
+            + comments
+            + p.Optional(filter).setResultsName('filter')
+            + comments
+            + p.ZeroOrMore(alias).setResultsName('aliases')
+            + comments
+            + p.StringEnd()
+        ).setParseAction(parse)
 
         return stmt.parseString(query)[0]

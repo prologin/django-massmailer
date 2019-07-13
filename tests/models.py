@@ -15,5 +15,7 @@ class SomeModel(models.Model):
 
 
 class SomeChild(models.Model):
-    parent = models.ForeignKey(SomeModel, related_name='children', on_delete=models.CASCADE)
+    parent = models.ForeignKey(
+        SomeModel, related_name='children', on_delete=models.CASCADE
+    )
     child_field = models.CharField(max_length=128)

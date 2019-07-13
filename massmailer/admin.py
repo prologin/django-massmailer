@@ -30,12 +30,17 @@ class BatchAdmin(admin.ModelAdmin):
     list_filter = ['template', 'query']
 
     def get_queryset(self, request):
-        return (super().get_queryset(request)
-                .select_related('initiator')
-                .prefetch_related('emails').annotate(email_count=Count('emails')))
+        return (
+            super()
+            .get_queryset(request)
+            .select_related('initiator')
+            .prefetch_related('emails')
+            .annotate(email_count=Count('emails'))
+        )
 
     def email_count(self, obj):
         return obj.email_count
+
     email_count.short_description = _("Email count")
     email_count.admin_order_field = 'email_count'
 
