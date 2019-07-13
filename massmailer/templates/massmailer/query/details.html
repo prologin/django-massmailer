@@ -6,17 +6,17 @@
 
 {% block extra_head %}
   <link rel="stylesheet" type="text/css" href="{% static 'vendor/select2/dist/css/select2.min.css' %}">
-  <link rel="stylesheet" type="text/css" href="{% static 'mailing/mailing.css' %}">
+  <link rel="stylesheet" type="text/css" href="{% static 'massmailer/massmailer.css' %}">
 {% endblock %}
 
 {% block breadcrumbs %}
   {{ block.super }}
-  {% breadcrumb_for 'mailing:dashboard' %}{% trans "Mailing" %}{% endbreadcrumb_for %}
-  {% breadcrumb_for 'mailing:dashboard' %}{% trans "Queries" %}{% endbreadcrumb_for %}
+  {% breadcrumb_for 'massmailer:dashboard' %}{% trans "Mailing" %}{% endbreadcrumb_for %}
+  {% breadcrumb_for 'massmailer:dashboard' %}{% trans "Queries" %}{% endbreadcrumb_for %}
   {% if query %}
-  {% breadcrumb_for 'mailing:query:update' %}{{ query.name }}{% endbreadcrumb_for %}
+  {% breadcrumb_for 'massmailer:query:update' %}{{ query.name }}{% endbreadcrumb_for %}
   {% else %}
-  {% breadcrumb_for 'mailing:query:new' %}{% trans "New query" %}{% endbreadcrumb_for %}
+  {% breadcrumb_for 'massmailer:query:new' %}{% trans "New query" %}{% endbreadcrumb_for %}
   {% endif %}
 {% endblock %}
 
@@ -170,12 +170,12 @@ alias some_name = .some_field</pre>
 
 {% block extra_script %}
   <script type="text/javascript">
-    var PREVIEW_URL = '{% url 'mailing:query:preview' %}';
+    var PREVIEW_URL = '{% url 'massmailer:query:preview' %}';
   </script>
   <script type="text/javascript" charset="utf-8" src="{% static 'js/utils.js' %}"></script>
   <script type="text/javascript" charset="utf-8" src="{% static 'vendor/select2/dist/js/select2.min.js' %}"></script>
   <script type="text/javascript" charset="utf-8" src="{% static 'vendor/ace-builds/src-min-noconflict/ace.js' %}"></script>
   <script type="text/javascript" charset="utf-8" src="{% static 'vendor/ace-builds/src-min-noconflict/ext-themelist.js' %}"></script>
   <script type="text/javascript" charset="utf-8" src="{% static 'vendor/ace-builds/src-min-noconflict/ext-language_tools.js' %}"></script>
-  <script type="text/javascript" charset="utf-8" src="{% static 'mailing/query-editor.js' %}"></script>
+  <script type="text/javascript" charset="utf-8" src="{% static 'massmailer/query-editor.js' %}"></script>
 {% endblock %}
