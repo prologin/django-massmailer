@@ -13,6 +13,7 @@ PATTERN = re.compile(r'\{([\{%s])\s*(?P<data>.*?)\s*\1\}')
 @contextmanager
 def override_locale(category, lang):
     import locale
+
     current = locale.getlocale(category)
     locale.setlocale(category, lang)
     yield
@@ -26,7 +27,9 @@ class Pre(Preprocessor):
 
     def replace(self, m):
         key = '§§§{}§§§'.format(uuid.uuid4())
-        self.ext.placeholders[key] = '{{{tag} {data} {tag}}}'.format(tag=m.group(1), data=m.group('data'))
+        self.ext.placeholders[key] = '{{{tag} {data} {tag}}}'.format(
+            tag=m.group(1), data=m.group('data')
+        )
         return key
 
     def run(self, lines):
@@ -44,7 +47,9 @@ class Post(Postprocessor):
     def run(self, text):
         if not self.ext.placeholders:
             return text
-        pat = '({})'.format('|'.join(re.escape(_) for _ in self.ext.placeholders))
+        pat = '({})'.format(
+            '|'.join(re.escape(_) for _ in self.ext.placeholders)
+        )
         return re.sub(pat, self.replace, text)
 
 
