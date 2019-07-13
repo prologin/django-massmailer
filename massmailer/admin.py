@@ -1,7 +1,9 @@
+from reversion.admin import VersionAdmin
+
 from django.contrib import admin
 from django.db.models import Count
-from reversion.admin import VersionAdmin
 from django.utils.translation import ugettext_lazy as _
+
 import massmailer.models
 
 
