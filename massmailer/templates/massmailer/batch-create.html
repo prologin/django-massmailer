@@ -6,9 +6,9 @@
 
 {% block breadcrumbs %}
   {{ block.super }}
-  {% breadcrumb_for 'mailing:dashboard' %}{% trans "Mailing" %}{% endbreadcrumb_for %}
-  {% breadcrumb_for 'mailing:batch:list' %}{% trans "Batches" %}{% endbreadcrumb_for %}
-  {% breadcrumb_for 'mailing:batch:create' %}{% trans "New batch" %}{% endbreadcrumb_for %}
+  {% breadcrumb_for 'massmailer:dashboard' %}{% trans "Mailing" %}{% endbreadcrumb_for %}
+  {% breadcrumb_for 'massmailer:batch:list' %}{% trans "Batches" %}{% endbreadcrumb_for %}
+  {% breadcrumb_for 'massmailer:batch:create' %}{% trans "New batch" %}{% endbreadcrumb_for %}
 {% endblock %}
 
 {% block content %}

@@ -6,7 +6,7 @@
 
 {% block breadcrumbs %}
   {{ block.super }}
-  {% breadcrumb_for 'mailing:dashboard' %}{% trans "Mailing" %}{% endbreadcrumb_for %}
+  {% breadcrumb_for 'massmailer:dashboard' %}{% trans "Mailing" %}{% endbreadcrumb_for %}
   {% breadcrumb_for '' %}{% trans "Dashboard" %}{% endbreadcrumb_for %}
 {% endblock %}
 
@@ -15,13 +15,13 @@
   <h1>{% trans "Mailing dashboard" %}</h1>
 
   <p>
-    <a href="{% url 'mailing:batch:list' %}" class="btn btn-default"><i class="fa fa-list"></i> {% trans "All batches" %}</a>
-    <a href="{% url 'mailing:batch:new' %}" class="btn btn-primary"><i class="fa fa-paper-plane-o"></i> {% trans "Send a new batch" %}</a>
+    <a href="{% url 'massmailer:batch:list' %}" class="btn btn-default"><i class="fa fa-list"></i> {% trans "All batches" %}</a>
+    <a href="{% url 'massmailer:batch:new' %}" class="btn btn-primary"><i class="fa fa-paper-plane-o"></i> {% trans "Send a new batch" %}</a>
   </p>
 
   <div class="row">
     <div class="col-md-6">
-      <a href="{% url 'mailing:template:new' %}" class="btn btn-info pull-right">
+      <a href="{% url 'massmailer:template:new' %}" class="btn btn-info pull-right">
         <i class="fa fa-envelope"></i> {% trans "Craft a new template" %}
       </a>
       <h2 class="heading-btn">{% trans "Templates" %}</h2>
@@ -42,7 +42,7 @@
     </div>
 
     <div class="col-md-6">
-      <a href="{% url 'mailing:query:new' %}" class="btn btn-info pull-right">
+      <a href="{% url 'massmailer:query:new' %}" class="btn btn-info pull-right">
         <i class="fa fa-database"></i> {% trans "Craft a new query" %}
       </a>
       <h2 class="heading-btn">{% trans "Queries" %}</h2>
