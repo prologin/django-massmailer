@@ -1,4 +1,5 @@
 import celery
+
 from django.db import transaction
 
 from massmailer.models import MailState, BatchEmail
