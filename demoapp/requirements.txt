@@ -1,0 +1,3 @@
+-e ..  # django-massmailing from the parent directory
+django-populate
+celery[redis]
