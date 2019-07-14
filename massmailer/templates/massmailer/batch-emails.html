@@ -20,7 +20,7 @@
     <a href="{% url 'massmailer:query:update' batch.query.id %}" class="btn btn-default btn-sm" title="{% trans "Query" %}"><i class="fa fa-database"></i> {{ batch.query }}</a>
   </p>
 
-  {% include "stub_pagination.html" %}
+  {% include "massmailer/stub_pagination.html" %}
 
   <table class="table table-striped">
   <thead><tr>
@@ -33,7 +33,7 @@
   {% for email in emails %}
     <tr>
       <td>{{ email.id }}</td>
-      <td>{% if email.user %}<a href="{% url 'users:profile' email.user.pk %}">{{ email.user.username }}</a>{% endif %} <small class="text-muted">{{ email.email }}</small></td>
+      <td>{% if email.user %}<a href="{{ email.user.get_absolute_url }}">{{ email.user.username }}</a>{% endif %} <small class="text-muted">{{ email.email }}</small></td>
       <td><tt>{{ email.subject|truncatechars:32 }}</tt></td>
       <td>{{ email.state_display }}</td>
     </tr>
@@ -41,6 +41,6 @@
   </tbody>
   </table>
 
-  {% include "stub_pagination.html" %}
+  {% include "massmailer/stub_pagination.html" %}
 
 {% endblock %}
