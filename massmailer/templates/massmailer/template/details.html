@@ -1,6 +1,6 @@
 {% extends "massmailer/base.html" %}
 {% load i18n staticfiles %}
-{% load bootstrap django_bootstrap_breadcrumbs utils %}
+{% load bootstrap django_bootstrap_breadcrumbs %}
 
 {% block title %}{% if template %}{{ template.name }}{% else %}{% trans "New template" %}{% endif %} – {% trans "Mailing" %}{% endblock %}
 
