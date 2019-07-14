@@ -7,7 +7,7 @@ mkdir -p "$dest"
 
 npm install
 
-cp \
+cp -r \
     node_modules/ace-builds/src-min-noconflict/ace.js \
     node_modules/ace-builds/src-min-noconflict/ext-themelist.js \
     node_modules/ace-builds/src-min-noconflict/ext-language_tools.js \
@@ -16,5 +16,10 @@ cp \
     node_modules/select2/dist/js/select2.min.js \
     node_modules/bootstrap/dist/css/bootstrap.min.css \
     node_modules/bootstrap/dist/js/bootstrap.min.js \
-    node_modules/font-awesome/css/font-awesome.min.css \
     "$dest"
+
+mkdir -p "$dest/font-awesome"
+cp -r \
+    node_modules/font-awesome/css \
+    node_modules/font-awesome/fonts \
+    "$dest/font-awesome"
