@@ -393,9 +393,9 @@ class BatchEmail(models.Model):
     def build_email(self):
         assert self.subject
         assert self.body
-        # add a custom header to resolve the mail ID from amazon bounces/complaints
+        # add a custom header to resolve the mail ID from bounces/complaints
         headers = {'X-MID': self.id}
-        if self.user:
+        if self.user and hasattr(self.user, 'get_unsubscribe_url'):
             headers['List-Unsubscribe'] = '<{}>'.format(
                 self.user.get_unsubscribe_url()
             )
