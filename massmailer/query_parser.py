@@ -34,28 +34,36 @@ def _find_subclasses(cls):
 
 class QueryParser:
     """
-    A parser for a simple grammar to write user-friendly queries that get translated to Django ORM.
+    A parser for a simple grammar to write user-friendly queries that get
+    translated to Django ORM.
 
-    Aggregate functions such as count() shall be registered in the available_funcs mapping:
+    Aggregate functions such as count() shall be registered in the
+    available_funcs mapping:
         func name → func
     Use load_django_funcs=True to load all known Django ORM functions.
 
-    Available Django models shall be registered in the available_models mapping:
+    Available Django models shall be registered in the available_models
+    mapping:
         model name → model class
-    Use load_django_models=True to load all known Django models for the current project.
+    Use load_django_models=True to load all known Django models for the current
+    project.
 
-    There also is a concept of literal enums that have to be registered in the available_enums mapping:
+    There also is a concept of literal enums that have to be registered in the
+    available_enums mapping:
         (enum name eg. 'Namespace.EnumName') → enum class
-    where 'enum class' shall implement Python's enum.Enum API, ie. EnumCls[name] and EnumCls(value) methods.
+    where 'enum class' shall implement Python's enum.Enum API, ie.
+    EnumCls[name] and EnumCls(value) methods.
 
     Syntax example:
 
         # this is a comment
         SomeModel [as name]
           .field = 42
-          # two field predicates are joined with "and" if not explicitly using "or"
+          # two field predicates are joined with "and" if not explicitly using
+          # "or"
           count(.related_field) > 10
-          # there is a support for literal enums, that get replaced with their value
+          # there is a support for literal enums, that get replaced with their
+          # value
           .field = SomeClass.SomeEnum.some_enum_member
           (.field contains "string" or
            .field contains i"case insensitive")
@@ -63,7 +71,9 @@ class QueryParser:
         alias some_name = .some_field
     """
 
-    def __init__(self, load_django_funcs=True, load_django_models=True):
+    def __init__(
+        self, load_django_funcs=True, load_django_models=True, load_enums=True
+    ):
         self.available_funcs = {}
         self.available_models = {}
         self.available_enums = {}
@@ -76,6 +86,11 @@ class QueryParser:
                 {model.__name__: model for model in apps.get_models()}
             )
 
+        if load_enums:
+            from massmailer import REGISTERED_ENUMS
+
+            self.available_enums.update(REGISTERED_ENUMS)
+
     def parse_query(self, query: str) -> ParseResult:
         func_i = 0
 
@@ -84,7 +99,11 @@ class QueryParser:
             try:
                 enum = self.available_enums[enum]
             except KeyError:
-                raise ParseError("unknown enum '{}'".format(enum))
+                raise ParseError(
+                    "Unknown enum '{}'.\n\nAvailable enums: {}".format(
+                        enum, ', '.join(self.available_enums.keys())
+                    )
+                )
             try:
                 # try with member name
                 member = enum[member]
@@ -380,3 +399,7 @@ class QueryParser:
         ).setParseAction(parse)
 
         return stmt.parseString(query)[0]
+
+
+def parse_query(query: str) -> ParseResult:
+    return QueryParser().parse_query(query)
