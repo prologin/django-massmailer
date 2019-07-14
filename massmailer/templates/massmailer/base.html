@@ -1,0 +1,51 @@
+{% load i18n staticfiles %}
+{% load django_bootstrap_breadcrumbs rules %}
+
+{% get_current_language as LANGUAGE_CODE %}
+<!doctype html>
+<html lang="{{ LANGUAGE_CODE }}">
+<head>
+  <meta charset="utf-8">
+  <title>{% block title %}{% endblock %}</title>
+
+  <link rel="stylesheet" href="{% static 'massmailer/vendor/bootstrap.min.css' %}"/>
+  <link rel="stylesheet" href="{% static 'massmailer/vendor/font-awesome/css/font-awesome.min.css' %}"/>
+
+  {% block extra_head %}{% endblock %}
+</head>
+<body>
+  <div class="navbar navbar-default">
+    <div class="container">
+      <div class="navbar-header">
+        <div class="navbar-brand">
+          <a href="https://github.com/prologin/django-massmailer">
+            django-massmailer
+          </a>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="container">
+    {% block breadcrumbs %}
+      {% clear_breadcrumbs %}
+      {% breadcrumb_for 'massmailer:dashboard' %}django-massmailer{% endbreadcrumb_for %}
+    {% endblock %}
+    {% render_breadcrumbs "django_bootstrap_breadcrumbs/bootstrap3.html" %}
+
+    {% block content %}{% endblock %}
+  </div>
+
+  <footer>
+    <div class="container">
+      <hr />
+      django-massmailer — Copyright © 2019 Association Prologin
+    </div>
+  </footer>
+
+  {# Scripts #}
+  <script src="{% static 'vendor/jquery/dist/jquery.min.js' %}"></script>
+  <script src="{% static 'vendor/bootstrap/dist/js/bootstrap.min.js' %}"></script>
+
+  {% block extra_script %}{% endblock %}
+</body>
+</html>

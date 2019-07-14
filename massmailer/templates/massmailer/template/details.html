@@ -1,4 +1,4 @@
-{% extends "prologin/base.html" %}
+{% extends "massmailer/base.html" %}
 {% load i18n staticfiles %}
 {% load bootstrap django_bootstrap_breadcrumbs utils %}
 
@@ -11,7 +11,6 @@
 
 {% block breadcrumbs %}
   {{ block.super }}
-  {% breadcrumb_for 'massmailer:dashboard' %}{% trans "Mailing" %}{% endbreadcrumb_for %}
   {% breadcrumb_for 'massmailer:dashboard' %}{% trans "Templates" %}{% endbreadcrumb_for %}
   {% if template %}
   {% breadcrumb_for 'massmailer:template:update' %}{{ template.name }}{% endbreadcrumb_for %}
