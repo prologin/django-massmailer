@@ -15,7 +15,7 @@
 
   <a href="{% url 'massmailer:batch:new' %}" class="btn btn-primary"><i class="fa fa-paper-plane-o"></i> {% trans "New batch" %}</a>
 
-  {% include "stub_pagination.html" %}
+  {% include "massmailer/stub_pagination.html" %}
 
   <table class="table table-striped">
   <thead><tr>
@@ -31,7 +31,7 @@
   {% for batch in batches %}
     <tr>
       <td><a href="{% url 'massmailer:batch:detail' batch.pk %}">{{ batch }}</a></td>
-      <td>{% if batch.initiator %}<a href="{% url 'users:profile' batch.initiator.pk %}">{{ batch.initiator.username }}</a>{% endif %}</td>
+      <td>{% if batch.initiator %}<a href="{{ batch.initiator.get_absolute_url }}">{{ batch.initiator.username }}</a>{% endif %}</td>
       <td>{{ batch.date_created|date:'SHORT_DATETIME_FORMAT' }}</td>
       <td><a href="{% url 'massmailer:template:update' batch.template.pk %}">{{ batch.template }}</a></td>
       <td><a href="{% url 'massmailer:query:update' batch.query.pk %}">{{ batch.query }}</a></td>
@@ -71,6 +71,6 @@
   </tbody>
   </table>
 
-  {% include "stub_pagination.html" %}
+  {% include "massmailer/stub_pagination.html" %}
 
 {% endblock %}

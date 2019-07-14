@@ -1,0 +1,20 @@
+{% load i18n %}
+{% load massmailer %}
+
+{% if is_paginated %}
+  <ul class="pagination">
+    {% if page_obj.has_previous %}
+      <li><a href="?{% querystring request page=1 %}" aria-label="{% trans "First" %}"><span aria-hidden="true">&laquo;</span></a></li>
+      <li><a href="?{% querystring request page=page_obj.previous_page_number %}" aria-label="{% trans "Previous" %}"><span aria-hidden="true">&lsaquo;</span></a></li>
+    {% endif %}
+
+    {% for i in page_obj.paginator.page_range %}
+      <li {% if page_obj.number == i %} class="active" {% endif %}><a href="?{% querystring request page=i %}">{{ i }}</a></li>
+    {% endfor %}
+
+    {% if page_obj.has_next %}
+      <li><a href="?{% querystring request page=page_obj.next_page_number %}" aria-label="{% trans "Next" %}"><span aria-hidden="true">&rsaquo;</span></a></li>
+      <li><a href="?{% querystring request page=page_obj.paginator.num_pages %}" aria-label="{% trans "Last" %}"><span aria-hidden="true">&raquo;</span></a></li>
+    {% endif %}
+  </ul>
+{% endif %}
