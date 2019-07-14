@@ -16,6 +16,7 @@ cp -r \
     node_modules/select2/dist/js/select2.min.js \
     node_modules/bootstrap/dist/css/bootstrap.min.css \
     node_modules/bootstrap/dist/js/bootstrap.min.js \
+    node_modules/jquery/dist/jquery.min.js \
     "$dest"
 
 mkdir -p "$dest/font-awesome"
