@@ -34,7 +34,7 @@ from rules.contrib.views import PermissionRequiredMixin
 import massmailer.forms
 import massmailer.models
 import massmailer.tasks
-import massmailer.query_parser
+from massmailer.query_parser import QueryParser
 from massmailer.utils import JinjaEscapeExtension
 
 
@@ -157,7 +157,7 @@ class QueryMixin(MailingPermissionMixin, RevisionMixin):
         return sorted(
             (
                 {'name': name, 'members': [m.name for m in enum]}
-                for name, enum in massmailer.query_parser.available_enums.items()
+                for name, enum in QueryParser().available_enums.items()
             ),
             key=lambda e: e['name'].lower(),
         )
@@ -166,7 +166,7 @@ class QueryMixin(MailingPermissionMixin, RevisionMixin):
     def available_funcs(self):
         return [
             {'name': name, 'doc': inspect.signature(func)}
-            for name, func in massmailer.query_parser.available_funcs.items()
+            for name, func in QueryParser().available_funcs.items()
         ]
 
     @cached_property

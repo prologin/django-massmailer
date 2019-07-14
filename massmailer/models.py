@@ -20,7 +20,7 @@ from django.utils.text import slugify
 from django.utils.translation import ugettext_lazy as _
 from functools import reduce
 
-from massmailer.query_parser import parse_query, ParseError
+from massmailer.query_parser import QueryParser, ParseError
 from massmailer.utils import override_locale
 from massmailer.utils.db import ConditionalSum, CaseMapping
 
@@ -180,14 +180,14 @@ class Query(models.Model):
         return self.execute(self.query)
 
     def parse(self):
-        return parse_query(self.query)
+        return QueryParser().parse_query(self.query)
 
     @staticmethod
     def execute(query):
         User = get_user_model()
         user_label = User._meta.label
 
-        result = parse_query(query)
+        result = QueryParser().parse_query(query)
         qs = result.queryset
         qs_label = qs.model._meta.label
 

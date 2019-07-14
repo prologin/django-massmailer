@@ -149,5 +149,5 @@ class QueryParserTestCase(TestCase):
         r = qp.parse_query("SomeModel .text_field = MyApp.SomeEnum.bar")
         self.assertEqual(r.queryset.first().text_field, SomeEnum.bar.value)
 
-        with self.assertRaisesMessage(Exception, 'unknown enum'):
+        with self.assertRaisesMessage(Exception, 'Unknown enum'):
             qp.parse_query("SomeModel .text_field = Not.Even.close")
