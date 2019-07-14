@@ -2,3 +2,8 @@
 __pycache__/
 venv/
 .idea/
+*.egg-info
+pip-wheel-metadata
+
+node_modules
+package-lock.json
