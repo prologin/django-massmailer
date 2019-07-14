@@ -1,0 +1,19 @@
+{
+  "name": "django-massmailer",
+  "version": "0.0.1",
+  "description": "Static assets management for django-massmailer",
+  "repository": {
+    "type": "git",
+    "url": "git@github.com:prologin/django-massmailer"
+  },
+  "author": "Association Prologin",
+  "license": "GPL-3.0",
+  "private": true,
+  "devDependencies": {
+    "ace-builds": "1.x.x",
+    "bootstrap": "3.4.x",
+    "font-awesome": "4.x.x",
+    "jquery": "3.x.x",
+    "select2": "4.x.x"
+  }
+}
