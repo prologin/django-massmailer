@@ -9,6 +9,8 @@ setup(
         "bleach",  # HTML sanitizer
         "celery<5",  # task queue
         "django<3",
+        "django-bootstrap-form",  # bootstrap template tags
+        "django-bootstrap-breadcrumbs",  # breadcrumbs in default templates
         "django-reversion",  # model revision/history
         "django-crispy-forms",  # form builder compatible with Bootstrap
         "jinja2",  # sane templates
