@@ -16,7 +16,6 @@ INSTALLED_APPS = [
     'django.contrib.staticfiles',
     'demoapp',
     'massmailer',
-    'bootstrapform',
     'crispy_forms',
     'django_bootstrap_breadcrumbs',
     'reversion',

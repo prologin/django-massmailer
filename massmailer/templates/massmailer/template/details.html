@@ -1,6 +1,6 @@
 {% extends "massmailer/base.html" %}
 {% load i18n staticfiles %}
-{% load bootstrap django_bootstrap_breadcrumbs %}
+{% load django_bootstrap_breadcrumbs crispy_forms_tags %}
 
 {% block title %}{% if template %}{{ template.name }}{% else %}{% trans "New template" %}{% endif %} – {% trans "Mailing" %}{% endblock %}
 
@@ -42,14 +42,14 @@
     <div class="row">
       <div class="col-md-6">
         <h2>{% trans "Template" %}</h2>
-        {{ form.name|bootstrap }}
-        {{ form.description|bootstrap }}
-        {{ form.html_enabled|bootstrap }}
+        {{ form.name|as_crispy_field }}
+        {{ form.description|as_crispy_field }}
+        {{ form.html_enabled|as_crispy_field }}
       </div>
 
       <div class="col-md-6">
         <h2>{% trans "Preview with query" %}</h2>
-        {{ form.useful_queries|bootstrap }}
+        {{ form.useful_queries|as_crispy_field }}
       {% comment %}
       {% if template.useful_queries.all %}
         <p>
@@ -64,12 +64,12 @@
 
     <div class="row">
       <div class="col-md-6">
-        {{ form.subject|bootstrap }}
+        {{ form.subject|as_crispy_field }}
         <p id="preview-subject-error" class="text-danger"></p>
-        {{ form.plain_body|bootstrap }}
+        {{ form.plain_body|as_crispy_field }}
         <p id="preview-plain-error" class="text-danger"></p>
-        {{ form.use_markdown|bootstrap }}
-        {{ form.html_body|bootstrap }}
+        {{ form.use_markdown|as_crispy_field }}
+        {{ form.html_body|as_crispy_field }}
         <p id="preview-html-error" class="text-danger"></p>
         <button type="submit" class="btn btn-primary"><i class="fa fa-save"></i> {% trans "Save template" %}</button>
       </div>
