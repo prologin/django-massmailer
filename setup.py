@@ -2,7 +2,8 @@ from setuptools import setup
 
 setup(
     name="django-massmailer",
-    author="Alexandre Macabies",
+    author="Association Prologin",
+    author_email="info@prologin.org",
     license="GPL3",
     packages=["massmailer"],
     install_requires=[
