@@ -20,7 +20,6 @@ setup(
         "jinja2",  # sane templates
         "markdown",
         "pyparsing",  # query language parser
-        "rules",  # fine-grained permissions
     ],
     classifiers=[
         'License :: OSI Approved :: GNU General Public License v3 (GPLv3)',
