@@ -69,7 +69,7 @@ class TemplateForm(forms.ModelForm):
 class QueryForm(forms.ModelForm):
     class Meta:
         model = massmailer.models.Query
-        fields = ['name', 'description', 'query', 'useful_with']
+        fields = ['name', 'description', 'useful_with', 'query']
         widgets = {'description': forms.Textarea(attrs={'rows': 2})}
 
 
