@@ -7,6 +7,10 @@ import pyparsing
 
 from django.apps import apps
 from django.contrib.auth import get_user_model
+from django.contrib.auth.mixins import (
+    PermissionRequiredMixin,
+    UserPassesTestMixin,
+)
 from django.core import serializers
 from django.core.exceptions import FieldError, ObjectDoesNotExist
 from django.db import models
@@ -29,7 +33,6 @@ from django.views.generic.edit import (
 )
 from django.views.generic.list import ListView
 from reversion.views import RevisionMixin
-from rules.contrib.views import PermissionRequiredMixin
 
 import massmailer.forms
 import massmailer.models
@@ -38,8 +41,11 @@ from massmailer.query_parser import QueryParser
 from massmailer.utils import JinjaEscapeExtension
 
 
-class MailingPermissionMixin(PermissionRequiredMixin):
-    permission_required = 'massmailer.admin'
+class MailerAdminMixin(UserPassesTestMixin):
+    def test_func(self):
+        # Like for the Django Admin, only staff users can see the mailing
+        # panel, whatever their permissions are.
+        return self.request.user.is_staff
 
 
 class ObjectByIdMixin:
@@ -50,7 +56,7 @@ class ObjectByIdMixin:
             raise Http404()
 
 
-class DashboardView(MailingPermissionMixin, TemplateView):
+class DashboardView(MailerAdminMixin, TemplateView):
     template_name = 'massmailer/dashboard.html'
 
     def get_context_data(self, **kwargs):
@@ -64,14 +70,16 @@ class DashboardView(MailingPermissionMixin, TemplateView):
         return context
 
 
-class TemplateMixin(MailingPermissionMixin, RevisionMixin):
+class TemplateMixin(MailerAdminMixin, RevisionMixin):
     template_name = 'massmailer/template/details.html'
     context_object_name = 'template'
     model = massmailer.models.Template
     form_class = massmailer.forms.TemplateForm
 
 
-class CreateTemplateView(TemplateMixin, CreateView):
+class CreateTemplateView(PermissionRequiredMixin, TemplateMixin, CreateView):
+    permission_required = 'massmailer.create_template'
+
     def get_success_url(self):
         return self.object.get_absolute_url()
 
@@ -85,7 +93,11 @@ class CreateTemplateView(TemplateMixin, CreateView):
         return None  # the template isn't in db yet
 
 
-class UpdateTemplateView(TemplateMixin, ObjectByIdMixin, UpdateView):
+class UpdateTemplateView(
+    PermissionRequiredMixin, TemplateMixin, ObjectByIdMixin, UpdateView
+):
+    permission_required = 'massmailer.change_template'
+
     def form_valid(self, form):
         if form.was_overwritten():
             form.reset_overwritten()
@@ -101,7 +113,9 @@ class UpdateTemplateView(TemplateMixin, ObjectByIdMixin, UpdateView):
 
 
 @method_decorator(csrf_exempt, name='dispatch')
-class TemplatePreviewView(MailingPermissionMixin, View):
+class TemplatePreviewView(PermissionRequiredMixin, MailerAdminMixin, View):
+    permission_required = 'massmailer.view_template'
+
     def post(self, request, *args, **kwargs):
         # TODO: context from query builder
         data = {}
@@ -146,7 +160,7 @@ class TemplatePreviewView(MailingPermissionMixin, View):
         return JsonResponse(data)
 
 
-class QueryMixin(MailingPermissionMixin, RevisionMixin):
+class QueryMixin(MailerAdminMixin, RevisionMixin):
     template_name = 'massmailer/query/details.html'
     context_object_name = 'query'
     model = massmailer.models.Query
@@ -211,7 +225,9 @@ class QueryMixin(MailingPermissionMixin, RevisionMixin):
         return context
 
 
-class CreateQueryView(QueryMixin, CreateView):
+class CreateQueryView(PermissionRequiredMixin, QueryMixin, CreateView):
+    permission_required = 'massmailer.create_query'
+
     def get_success_url(self):
         return self.object.get_absolute_url()
 
@@ -225,12 +241,16 @@ class CreateQueryView(QueryMixin, CreateView):
         return None  # the query isn't in the db yet
 
 
-class UpdateQueryView(QueryMixin, ObjectByIdMixin, UpdateView):
-    pass
+class UpdateQueryView(
+    PermissionRequiredMixin, QueryMixin, ObjectByIdMixin, UpdateView
+):
+    permission_required = 'massmailer.change_query'
 
 
 @method_decorator(csrf_exempt, name='dispatch')
-class QueryPreviewView(MailingPermissionMixin, View):
+class QueryPreviewView(PermissionRequiredMixin, MailerAdminMixin, View):
+    permission_required = 'massmailer.view_query'
+
     @staticmethod
     def serialize(obj):
         if obj is None:
@@ -279,19 +299,19 @@ class QueryPreviewView(MailingPermissionMixin, View):
         return JsonResponse(data)
 
 
-class BatchListView(PermissionRequiredMixin, ListView):
+class BatchListView(PermissionRequiredMixin, MailerAdminMixin, ListView):
     model = massmailer.models.Batch
     template_name = 'massmailer/batch-list.html'
     context_object_name = 'batches'
     paginate_by = 25
-    permission_required = 'massmailer.admin'
+    permission_required = 'massmailer.view_batch'
 
 
-class BatchCreateView(PermissionRequiredMixin, CreateView):
+class BatchCreateView(PermissionRequiredMixin, MailerAdminMixin, CreateView):
     model = massmailer.models.Batch
     form_class = massmailer.forms.CreateBatchForm
     template_name = 'massmailer/batch-create.html'
-    permission_required = 'massmailer.send'
+    permission_required = 'massmailer.create_batch'
 
     def get_success_url(self):
         return reverse('massmailer:batch:detail', args=[self.object.pk])
@@ -317,12 +337,12 @@ class BatchCreateView(PermissionRequiredMixin, CreateView):
         return None  # the batch isn't in the db yet
 
 
-class BatchDetailView(PermissionRequiredMixin, ListView):
+class BatchDetailView(PermissionRequiredMixin, MailerAdminMixin, ListView):
     model = massmailer.models.BatchEmail
     template_name = 'massmailer/batch-emails.html'
     context_object_name = 'emails'
     paginate_by = 200
-    permission_required = 'massmailer.admin'
+    permission_required = 'massmailer.view_batch'
 
     @property
     def batch_id(self):
@@ -345,12 +365,12 @@ class BatchDetailView(PermissionRequiredMixin, ListView):
         return context
 
 
-class BatchRetryView(PermissionRequiredMixin, UpdateView):
+class BatchRetryView(PermissionRequiredMixin, MailerAdminMixin, UpdateView):
     model = massmailer.models.Batch
     pk_url_kwarg = 'id'
     fields = []
     success_url = reverse_lazy('massmailer:batch:list')
-    permission_required = 'massmailer.send'
+    permission_required = 'massmailer.change_batch'
 
     def form_valid(self, form):
         # create the tasks
@@ -359,8 +379,8 @@ class BatchRetryView(PermissionRequiredMixin, UpdateView):
         return super(ModelFormMixin, self).form_valid(form)
 
 
-class BatchDeleteView(PermissionRequiredMixin, DeleteView):
+class BatchDeleteView(PermissionRequiredMixin, MailerAdminMixin, DeleteView):
     model = massmailer.models.Batch
     pk_url_kwarg = 'id'
     success_url = reverse_lazy('massmailer:batch:list')
-    permission_required = 'massmailer.send'
+    permission_required = 'massmailer.delete_batch'

@@ -19,7 +19,6 @@ INSTALLED_APPS = [
     'crispy_forms',
     'django_bootstrap_breadcrumbs',
     'reversion',
-    'rules',
 ]
 
 ROOT_URLCONF = 'demoapp.urls'
