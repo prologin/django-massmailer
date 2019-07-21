@@ -11,8 +11,8 @@ msgid ""
 msgstr ""
 "Project-Id-Version: django-massmailer v0.1\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2019-07-21 23:30+0200\n"
-"PO-Revision-Date: 2019-07-21 23:25+0200\n"
+"POT-Creation-Date: 2019-07-21 23:54+0200\n"
+"PO-Revision-Date: 2019-07-21 23:55+0200\n"
 "Last-Translator: \n"
 "Language-Team: \n"
 "Language: fr\n"
@@ -334,15 +334,16 @@ msgid "Syntax guide & shortcuts"
 msgstr "Guide de syntaxe et raccourcis"
 
 #: templates/massmailer/query/details.html:114
+#, python-format
 msgid ""
 "Filters are implicity joined by the <code>and</code> operator.\n"
-"  If you are not querying on the <code>ProloginUser</code> model directly, "
+"  If you are not querying on the <code>%(user_model)s</code> model directly, "
 "you must create a\n"
 "  <code>user</code>\n"
 "  alias targeting a field containing the related user."
 msgstr ""
 "Les filtres sont implicitement joints par l'opérateur <code>and</code>.\n"
-"Si vous ne requêtez pas directement le modèle <code>ProloginUser</code>, "
+"Si vous ne requêtez pas directement le modèle <code>%(user_model)s</code>, "
 "vous devez définir un alias <code>user</code> qui cible le champ contenant "
 "l'utilisateur lié."
 
@@ -409,7 +410,7 @@ msgstr ""
 "Le formulaire a été enregistré pendant vous le modifiez. Veuillez fusionner "
 "vos modifications avec la version actuelle."
 
-#: views.py:295
+#: views.py:296
 #, python-format
 msgid "Syntax error at position %(pos)s."
 msgstr "Erreur de syntaxe à la position %(pos)s."

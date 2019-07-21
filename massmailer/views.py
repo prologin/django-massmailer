@@ -222,6 +222,7 @@ class QueryMixin(MailerAdminMixin, RevisionMixin):
         context['available_enums'] = self.available_enums
         context['available_funcs'] = self.available_funcs
         context['available_models'] = self.available_models
+        context['user_model'] = get_user_model().__name__
         return context
 
 

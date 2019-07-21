@@ -112,7 +112,7 @@
             <div id="wrap-syntax-guide" class="panel-collapse collapse" role="tabpanel">
               <div class="panel-body">
                 <p>{% blocktrans %}Filters are implicity joined by the <code>and</code> operator.
-  If you are not querying on the <code>ProloginUser</code> model directly, you must create a
+  If you are not querying on the <code>{{ user_model }}</code> model directly, you must create a
   <code>user</code>
   alias targeting a field containing the related user.{% endblocktrans %}</p>
                   <pre>SomeModel [as name]
