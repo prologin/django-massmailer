@@ -1,0 +1,415 @@
+# django-massmailer's french translation
+# Copyright (C) 2016 Alexandre Macabies
+# Copyright (C) 2016 Antoine Pietri
+# This file is distributed under the same license as the django-massmailer
+# package.
+# Translators:
+# Antoine Pietri, 2016
+# Alexandre Macabies, 2016
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: django-massmailer v0.1\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2019-07-21 23:30+0200\n"
+"PO-Revision-Date: 2019-07-21 23:25+0200\n"
+"Last-Translator: \n"
+"Language-Team: \n"
+"Language: fr\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=2; plural=(n > 1);\n"
+"X-Generator: Poedit 2.2.1\n"
+
+#: admin.py:44
+msgid "Email count"
+msgstr "Nombre de mails"
+
+#: forms.py:19
+msgid "HTML enabled"
+msgstr "HTML activé"
+
+#: forms.py:22
+msgid "Generate HTML from plaintext"
+msgstr "Générer le HTML depuis le texte brut"
+
+#: forms.py:27
+msgid "Useful queries"
+msgstr "Requêtes utiles"
+
+#: forms.py:65
+msgid "You must provide an HTML template if HTML is enabled."
+msgstr "Vous devez fournir un gabarit HTML si vous activez le HTML."
+
+#: forms.py:77
+#, python-format
+msgid "i am fine bothering %(n)s people"
+msgstr "ok pour ennuyer %(n)s personnes"
+
+#: forms.py:87
+msgid "Foolproofing"
+msgstr "Anti-stupidité"
+
+#: forms.py:92
+#, python-format
+msgid "Type “%s” above"
+msgstr "Recopiez “%s” ci-dessus"
+
+#: forms.py:103
+msgid "Send"
+msgstr "Envoyer"
+
+#: forms.py:112
+#, python-format
+msgid "Actually send to %(n)s people right now"
+msgstr "Vraiment envoyer à %(n)s personnes, immédiatement"
+
+#: models.py:59 models.py:155
+msgid "Name"
+msgstr "Nom"
+
+#: models.py:60 models.py:156
+msgid "Description"
+msgstr "Description"
+
+#: models.py:61
+msgid "Subject template"
+msgstr "Gabarit du sujet"
+
+#: models.py:62
+msgid "Plaintext body template"
+msgstr "Gabarit en texte brut"
+
+#: models.py:64
+msgid "HTML body template"
+msgstr "Gabarit en HTML"
+
+#: models.py:69 models.py:284 templates/massmailer/batch-emails.html:19
+#: templates/massmailer/batch-list.html:25
+#: templates/massmailer/template/details.html:44
+msgid "Template"
+msgstr "Gabarit"
+
+#: models.py:70 templates/massmailer/dashboard.html:26
+#: templates/massmailer/template/details.html:14
+msgid "Templates"
+msgstr "Gabarits"
+
+#: models.py:157 models.py:167 models.py:291
+#: templates/massmailer/batch-emails.html:20
+#: templates/massmailer/batch-list.html:26
+msgid "Query"
+msgstr "Requête"
+
+#: models.py:162
+msgid "Useful with templates"
+msgstr "Utile avec les gabarits"
+
+#: models.py:168 templates/massmailer/dashboard.html:47
+#: templates/massmailer/query/details.html:14
+msgid "Queries"
+msgstr "Requêtes"
+
+#: models.py:200
+#, python-format
+msgid "The root model is not %(model)s. You must provide a `user` alias."
+msgstr ""
+"Le modèle racine n'est pas %(model)s. Vous devez fournir un alias `user`."
+
+#: models.py:208
+#, python-format
+msgid "%(label)s.%(field)s is not %(model)s"
+msgstr "%(label)s.%(field)s n'est pas %(model)s"
+
+#: models.py:218
+#, python-format
+msgid "%(label)s has no field `%(field)s`"
+msgstr "%(label)s n'a pas de champ `%(field)s`"
+
+#: models.py:277
+msgid "Optional name"
+msgstr "Nom (optionnel)"
+
+#: models.py:303 templates/massmailer/batch-emails.html:5
+msgid "Batch"
+msgstr "Lot"
+
+#: models.py:304 templates/massmailer/batch-create.html:9
+#: templates/massmailer/batch-emails.html:9
+#: templates/massmailer/batch-list.html:5
+#: templates/massmailer/batch-list.html:9
+#: templates/massmailer/batch-list.html:14
+#: templates/massmailer/batch_confirm_delete.html:9
+msgid "Batches"
+msgstr "Lots"
+
+#: models.py:310
+#, python-format
+msgid "Batch %(id)s"
+msgstr "Lot %(id)s"
+
+#: templates/massmailer/batch-create.html:5
+#: templates/massmailer/batch-create.html:15
+#: templates/massmailer/dashboard.html:18
+msgid "Send a new batch"
+msgstr "Envoyer un nouveau lot"
+
+#: templates/massmailer/batch-create.html:5
+#: templates/massmailer/batch-emails.html:5
+#: templates/massmailer/batch-list.html:5
+#: templates/massmailer/batch_confirm_delete.html:5
+#: templates/massmailer/dashboard.html:5
+#: templates/massmailer/query/details.html:5
+#: templates/massmailer/template/details.html:5
+msgid "Mailing"
+msgstr "Mailing"
+
+#: templates/massmailer/batch-create.html:10
+#: templates/massmailer/batch-list.html:16
+msgid "New batch"
+msgstr "Nouveau lot"
+
+#: templates/massmailer/batch-emails.html:15
+#, python-format
+msgid "Batch details for %(name)s"
+msgstr "Détail du lot %(name)s"
+
+#: templates/massmailer/batch-emails.html:17
+#, python-format
+msgid "Initiated by <strong>%(initiator)s</strong> on %(date)s."
+msgstr "Initié par <strong>%(initiator)s</strong> le %(date)s."
+
+#: templates/massmailer/batch-emails.html:27
+#: templates/massmailer/batch-list.html:22
+msgid "ID"
+msgstr "ID"
+
+#: templates/massmailer/batch-emails.html:28
+msgid "User"
+msgstr "Utilisateur"
+
+#: templates/massmailer/batch-emails.html:29
+msgid "Subject"
+msgstr "Sujet"
+
+#: templates/massmailer/batch-emails.html:30
+msgid "State"
+msgstr "État"
+
+#: templates/massmailer/batch-list.html:23
+msgid "Initiator"
+msgstr "Initiateur"
+
+#: templates/massmailer/batch-list.html:24
+msgid "Created"
+msgstr "Créé le"
+
+#: templates/massmailer/batch-list.html:28
+msgid "Progress"
+msgstr "Progression"
+
+#: templates/massmailer/batch-list.html:39
+#: templates/massmailer/batch_confirm_delete.html:11
+#: templates/massmailer/batch_confirm_delete.html:23
+msgid "Delete"
+msgstr "Supprimer"
+
+#: templates/massmailer/batch-list.html:41
+msgid "Completed"
+msgstr "Terminé"
+
+#: templates/massmailer/batch-list.html:45
+msgid "Retry pending"
+msgstr "Réessayer ceux en attente"
+
+#: templates/massmailer/batch-list.html:50
+msgid "Total ⋅ Pending ⋅ Sending ⋅ Sent ⋅ Bounced ⋅ Complaints"
+msgstr "Total ⋅ En attente ⋅ En envoi ⋅ Envoyés ⋅ “Bounces” ⋅ Plaintes"
+
+#: templates/massmailer/batch-list.html:69
+msgid "There is no batch yet."
+msgstr "Il n'y a pas encore de lot."
+
+#: templates/massmailer/batch_confirm_delete.html:5
+#: templates/massmailer/batch_confirm_delete.html:16
+msgid "Delete a batch"
+msgstr "Supprimer un lot"
+
+#: templates/massmailer/batch_confirm_delete.html:18
+#, python-format
+msgid "Are you sure you want to delete <em>%(batch)s</em>?"
+msgstr "Voulez-vous vraiment supprimer <em>%(batch)s</em> ?"
+
+#: templates/massmailer/batch_confirm_delete.html:22
+msgid "Cancel"
+msgstr "Annuler"
+
+#: templates/massmailer/dashboard.html:5 templates/massmailer/dashboard.html:9
+msgid "Dashboard"
+msgstr "Tableau de bord"
+
+#: templates/massmailer/dashboard.html:14
+msgid "Mailing dashboard"
+msgstr "Tableau de bord mailing"
+
+#: templates/massmailer/dashboard.html:17
+msgid "All batches"
+msgstr "Tous les lots"
+
+#: templates/massmailer/dashboard.html:24
+msgid "Craft a new template"
+msgstr "Créer un nouveau gabarit"
+
+#: templates/massmailer/dashboard.html:30
+msgid "Related useful queries"
+msgstr "Requêtes utiles liées"
+
+#: templates/massmailer/dashboard.html:31
+msgid "Plaintext + HTML"
+msgstr "Brut + HTML"
+
+#: templates/massmailer/dashboard.html:38
+msgid "There is no template yet."
+msgstr "Il n'y a pas encore de gabarit."
+
+#: templates/massmailer/dashboard.html:45
+msgid "Craft a new query"
+msgstr "Créer une nouvelle requête"
+
+#: templates/massmailer/dashboard.html:51
+msgid "Templates this query is useful for"
+msgstr "Gabarits utiles pour cette requête"
+
+#: templates/massmailer/dashboard.html:60
+msgid "There is no query yet."
+msgstr "Il n'y a pas encore de requête."
+
+#: templates/massmailer/query/details.html:5
+#: templates/massmailer/query/details.html:18
+#: templates/massmailer/query/details.html:27
+msgid "New query"
+msgstr "Nouvelle requête"
+
+#: templates/massmailer/query/details.html:25
+#, python-format
+msgid "Update query %(name)s"
+msgstr "Modifier la requête %(name)s"
+
+#: templates/massmailer/query/details.html:44
+msgid "Details"
+msgstr "Détails"
+
+#: templates/massmailer/query/details.html:46
+msgid "Save query"
+msgstr "Enregistrer la requête"
+
+#: templates/massmailer/query/details.html:50
+#: templates/massmailer/template/details.html:79
+msgid "Preview"
+msgstr "Prévisualisation"
+
+#: templates/massmailer/query/details.html:54
+msgid "<code class=\"result-model\"></code> count"
+msgstr "Nombre de <code class=\"result-model\"></code>"
+
+#: templates/massmailer/query/details.html:58
+msgid "Unique user count"
+msgstr "Nombre d'utilisateurs uniques"
+
+#: templates/massmailer/query/details.html:62
+msgid "<code class=\"result-model\"></code> accessible by"
+msgstr "<code class=\"result-model\"></code> accessible via"
+
+#: templates/massmailer/query/details.html:66
+msgid "Available aliases"
+msgstr "Alias accessibles"
+
+#: templates/massmailer/query/details.html:96
+msgid "Generated SQL query"
+msgstr "Requête SQL générée"
+
+#: templates/massmailer/query/details.html:108
+msgid "Syntax guide & shortcuts"
+msgstr "Guide de syntaxe et raccourcis"
+
+#: templates/massmailer/query/details.html:114
+msgid ""
+"Filters are implicity joined by the <code>and</code> operator.\n"
+"  If you are not querying on the <code>ProloginUser</code> model directly, "
+"you must create a\n"
+"  <code>user</code>\n"
+"  alias targeting a field containing the related user."
+msgstr ""
+"Les filtres sont implicitement joints par l'opérateur <code>and</code>.\n"
+"Si vous ne requêtez pas directement le modèle <code>ProloginUser</code>, "
+"vous devez définir un alias <code>user</code> qui cible le champ contenant "
+"l'utilisateur lié."
+
+#: templates/massmailer/query/details.html:126
+msgid "Available models"
+msgstr "Modèles disponibles"
+
+#: templates/massmailer/query/details.html:135
+msgid "Available enumerations"
+msgstr "Énumérations disponibles"
+
+#: templates/massmailer/query/details.html:150
+msgid "Available functions"
+msgstr "Fonctions disponibles"
+
+#: templates/massmailer/stub_pagination.html:7
+msgid "First"
+msgstr "Premier"
+
+#: templates/massmailer/stub_pagination.html:8
+msgid "Previous"
+msgstr "Précédent"
+
+#: templates/massmailer/stub_pagination.html:16
+msgid "Next"
+msgstr "Suivant"
+
+#: templates/massmailer/stub_pagination.html:17
+msgid "Last"
+msgstr "Dernier"
+
+#: templates/massmailer/template/details.html:5
+#: templates/massmailer/template/details.html:18
+#: templates/massmailer/template/details.html:27
+msgid "New template"
+msgstr "Nouveau gabarit"
+
+#: templates/massmailer/template/details.html:25
+#, python-format
+msgid "Update template %(name)s"
+msgstr "Modifier le gabarit %(name)s"
+
+#: templates/massmailer/template/details.html:51
+msgid "Preview with query"
+msgstr "Prévisualiser avec la requête"
+
+#: templates/massmailer/template/details.html:75
+msgid "Save template"
+msgstr "Enregistrer le gabarit"
+
+#: templates/massmailer/template/details.html:84
+msgid "Plaintext"
+msgstr "Texte brut"
+
+#: templates/massmailer/template/details.html:87
+msgid "HTML"
+msgstr "HTML"
+
+#: views.py:107
+msgid ""
+"The form was modified and saved while you were editing. Please merge with "
+"current version."
+msgstr ""
+"Le formulaire a été enregistré pendant vous le modifiez. Veuillez fusionner "
+"vos modifications avec la version actuelle."
+
+#: views.py:295
+#, python-format
+msgid "Syntax error at position %(pos)s."
+msgstr "Erreur de syntaxe à la position %(pos)s."
