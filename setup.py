@@ -2,6 +2,7 @@ from setuptools import setup
 
 setup(
     name="django-massmailer",
+    version='0.1',
     author="Association Prologin",
     author_email="info@prologin.org",
     license="GPL3",
