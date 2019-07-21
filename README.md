@@ -75,8 +75,8 @@ TODO
 
 `django-massmailer` is distributed under the GPLv3 licence.
 
-Copyright (C) 2016 Alexandre Macabies
-Copyright (C) 2016 Antoine Pietri
+- Copyright (C) 2016 Alexandre Macabies
+- Copyright (C) 2016 Antoine Pietri
 
 This program is free software: you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by

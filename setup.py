@@ -1,4 +1,8 @@
+import os.path
 from setuptools import setup
+
+with open(os.path.join(os.path.dirname(__file__), "README.md"), "r") as fh:
+    long_description = fh.read()
 
 setup(
     name="django-massmailer",
@@ -11,6 +15,8 @@ setup(
         "A standalone Django app to send templated emails in batch. "
         "Features a custom query engine and template editor with preview."
     ),
+    long_description=long_description,
+    long_description_content_type="text/markdown",
     install_requires=[
         "bleach",  # HTML sanitizer
         "celery>4",  # task queue
@@ -24,7 +30,6 @@ setup(
     ],
     classifiers=[
         'License :: OSI Approved :: GNU General Public License v3 (GPLv3)',
-        'Development Status :: 4 - Alpha',
         'Programming Language :: Python :: 3.6',
         'Programming Language :: Python :: 3.7',
         'Programming Language :: Python :: 3.8',
