@@ -9,17 +9,17 @@ website to send e-mails in bulk. It features:
 - An **e-mail template engine** to write your e-mail template, supporting both
   plaintext and HTML, with a live preview:
 
-    ![Template engine demo](doc/template_demo.gif)
+    ![Template engine demo](https://github.com/prologin/django-massmailer/raw/master/doc/template_demo.gif)
 
 - A **query language** to select the subset of users you want to send e-mails
   to, and preview the list of selected users:
 
-    ![Query language demo](doc/query_demo.gif)
+    ![Query language demo](https://github.com/prologin/django-massmailer/raw/master/doc/query_demo.gif)
 
 - A **batch status report** that shows how many e-mails have been sent, and is
   able to track bounces.
 
-    ![Batch status demo](doc/batch_demo.png)
+    ![Batch status demo](https://github.com/prologin/django-massmailer/raw/master/doc/batch_demo.png)
 
 
 ## Installation
@@ -56,12 +56,12 @@ urlpatterns = [
 You also need to have a working Celery setup with your website.
 You can check out the [official
 tutorial](https://docs.celeryproject.org/en/latest/django/first-steps-with-django.html)
-to setup Celery in your Django site, or just look at how we do it in our demo
+to setup Celery in your Django website, or just look at how we do it in our demo
 application:
 
-- [`demoapp/__init__.py`](demoapp/demoapp/__init__.py)
-- [`demoapp/celery.py`](demoapp/demoapp/celery.py)
-- [`demoapp/settings.py`](demoapp/demoapp/settings.py)
+- [`demoapp/__init__.py`](https://github.com/prologin/django-massmailer/blob/master/demoapp/demoapp/__init__.py)
+- [`demoapp/celery.py`](https://github.com/prologin/django-massmailer/blob/master/demoapp/demoapp/celery.py)
+- [`demoapp/settings.py`](https://github.com/prologin/django-massmailer/blob/master/demoapp/demoapp/settings.py)
 
 ## Documentation
 
