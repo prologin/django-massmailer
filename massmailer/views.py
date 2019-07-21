@@ -179,7 +179,11 @@ class QueryMixin(MailerAdminMixin, RevisionMixin):
     @cached_property
     def available_funcs(self):
         return [
-            {'name': name, 'doc': inspect.signature(func)}
+            {
+                'name': name,
+                'doc': inspect.getdoc(func),
+                'signature': inspect.signature(func),
+            }
             for name, func in QueryParser().available_funcs.items()
         ]
 
@@ -204,6 +208,7 @@ class QueryMixin(MailerAdminMixin, RevisionMixin):
                 'is_user': model is User,
                 'user_field': find_user_field(model),
                 'label': model._meta.label,
+                'doc': inspect.getdoc(model),
             }
             for model in models
         )

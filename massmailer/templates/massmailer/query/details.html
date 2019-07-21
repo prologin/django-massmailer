@@ -129,7 +129,7 @@ alias some_name = .some_field</pre>
                   <span class="ins-model btn btn-{% if model.user_field %}info{% elif model.is_user %}primary{% else %}default{% endif %} btn-xs"
                         data-alias="{% if not model.is_user and model.user_field %}{{ model.user_field }}{% endif %}"
                         data-clsname="{{ model.cls_name }}"
-                        title="{{ model.label }}">{{ model.name }}</span>
+                        title="{{ model.label }}&#xA;&#xA;{{ model.doc }}">{{ model.name }}</span>
                 {% endfor %}
                 </dd>
                 <dt>{% trans "Available enumerations" %}</dt>
@@ -150,7 +150,7 @@ alias some_name = .some_field</pre>
                 <dt>{% trans "Available functions" %}</dt>
                 <dd>
                 {% for func in available_funcs %}
-                  <span class="ins-func btn btn-default btn-xs" title="{{ func.doc }}">{{ func.name }}</span>
+                  <span class="ins-func btn btn-default btn-xs" title="{{ func.name }}{{ func.signature }}&#xA;&#xA;{{ func.doc }}">{{ func.name }}</span>
                 {% endfor %}
                 </dd>
                 </dl>
