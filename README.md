@@ -24,7 +24,44 @@ website to send e-mails in bulk. It features:
 
 ## Installation
 
-TODO
+First, install `django-massmailer` and its Python dependencies:
+
+```
+pip install django-massmailer
+```
+
+Then, add `massmailer` and its 3 Django dependencies to your project's
+`INSTALLED_APPS`:
+
+```python
+INSTALLED_APPS = (
+    # ...
+    'massmailer',
+    'crispy_forms',
+    'django_bootstrap_breadcrumbs',
+    'reversion',
+)
+```
+
+Add the following URL pattern to your `urls.py` to put the mailing
+dashboard in `/mailing`:
+
+```python
+urlpatterns = [
+    # ...
+    path('mailing', include('massmailer.urls')),
+]
+```
+
+You also need to have a working Celery setup with your website.
+You can check out the [official
+tutorial](https://docs.celeryproject.org/en/latest/django/first-steps-with-django.html)
+to setup Celery in your Django site, or just look at how we do it in our demo
+application:
+
+- [`demoapp/__init__.py`](demoapp/demoapp/__init__.py)
+- [`demoapp/celery.py`](demoapp/demoapp/celery.py)
+- [`demoapp/settings.py`](demoapp/demoapp/settings.py)
 
 ## Documentation
 
