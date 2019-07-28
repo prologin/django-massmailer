@@ -86,6 +86,10 @@
         html: html_editor.getSession().getDocument().getValue(),
       })
         .then(function (data) {
+          if (data.error) {
+            $('#preview-error').text(data.error);
+            return;
+          }
           count = data.query.count;
           page = data.query.page;
           $result_count.text(count);

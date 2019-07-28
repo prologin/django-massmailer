@@ -119,6 +119,13 @@ class TemplatePreviewView(PermissionRequiredMixin, MailerAdminMixin, View):
     def post(self, request, *args, **kwargs):
         # TODO: context from query builder
         data = {}
+
+        if not request.user.has_perm('massmailer.view_query'):
+            data['error'] = _(
+                "You don't have the permission to view query results."
+            )
+            return JsonResponse(data)
+
         html_enabled = request.POST.get('html_enabled') == 'true'
 
         query = massmailer.models.Query.objects.get(pk=(request.POST['query']))
