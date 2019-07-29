@@ -25,6 +25,7 @@ setup(
         "django-reversion",  # model revision/history
         "django-crispy-forms",  # form builder compatible with Bootstrap
         "jinja2",  # sane templates
+        "Babel",  # i18n template filters
         "markdown",
         "pyparsing",  # query language parser
     ],

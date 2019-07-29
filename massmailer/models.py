@@ -3,7 +3,7 @@ import enum
 import jinja2
 import jinja2.meta
 import jinja2.runtime
-import locale
+import jinja2.sandbox
 import operator
 import re
 import uuid
@@ -21,8 +21,8 @@ from django.utils.translation import ugettext_lazy as _
 from functools import reduce
 
 from massmailer.query_parser import QueryParser, ParseError
-from massmailer.utils import override_locale
 from massmailer.utils.db import ConditionalSum, CaseMapping
+from massmailer.utils.filters import dateformat, datetimeformat
 
 TEMPLATE_OPTS = {
     'autoescape': False,
@@ -88,21 +88,24 @@ class Template(models.Model):
         attr, _ = item.value
         return getattr(self, attr)
 
+    def environment(self, item):
+        env = jinja2.sandbox.SandboxedEnvironment(**self.template_opts(item))
+        env.filters['datetimeformat'] = datetimeformat
+        env.filters['dateformat'] = dateformat
+        return env
+
     def template(self, item: TemplateItem):
-        return jinja2.Template(
-            source=self.template_source(item), **self.template_opts(item)
-        )
+        env = self.environment(item)
+        return env.from_string(source=self.template_source(item))
 
     def variables(self, item: TemplateItem):
-        ast = jinja2.Environment(**self.template_opts(item)).parse(
-            source=self.template_source(item)
-        )
+        env = self.environment(item)
+        ast = env.parse(source=self.template_source(item))
         return jinja2.meta.find_undeclared_variables(ast)
 
     def render(self, item: TemplateItem, context: dict):
-        # TODO: make that generic and part of the model
-        with override_locale(locale.LC_TIME, 'fr_FR.UTF-8'):
-            content = self.template(item).render(context)
+        context['language'] = self.language
+        content = self.template(item).render(context)
         if item is TemplateItem.html:
             content = bleach.linkify(content)
         return content

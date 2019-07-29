@@ -10,16 +10,6 @@ from markdown.preprocessors import Preprocessor
 PATTERN = re.compile(r'\{([\{%s])\s*(?P<data>.*?)\s*\1\}')
 
 
-@contextmanager
-def override_locale(category, lang):
-    import locale
-
-    current = locale.getlocale(category)
-    locale.setlocale(category, lang)
-    yield
-    locale.setlocale(category, current)
-
-
 class Pre(Preprocessor):
     def __init__(self, ext):
         super().__init__()

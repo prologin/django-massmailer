@@ -134,6 +134,7 @@ class TemplatePreviewView(PermissionRequiredMixin, MailerAdminMixin, View):
         template = massmailer.models.Template()
         template.subject = request.POST['subject']
         template.plain_body = request.POST['plain']
+        template.language = request.POST['language']
 
         if html_enabled:
             if request.POST.get('use_markdown') == 'true':

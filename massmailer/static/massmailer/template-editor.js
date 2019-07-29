@@ -22,6 +22,7 @@
   };
 
   $(function () {
+    var $language = $('#id_language');
     var $use_markdown = $('#id_use_markdown');
     var $html_enabled = $('#id_html_enabled');
     var $wrap_columns = $('#id_wrap_columns');
@@ -81,6 +82,7 @@
         wrap_columns: $wrap_columns.val(),
         query: query_id,
         page: page,
+        language: $language.val(),
         subject: subject_editor.getSession().getDocument().getValue(),
         plain: plain_editor.getSession().getDocument().getValue(),
         html: html_editor.getSession().getDocument().getValue(),
@@ -154,6 +156,8 @@
     });
     $wrap_columns.on('change', debounce(preview, 500));
     html_editor.renderer.setScrollMargin(4, 4);
+
+    $language.on('change', debounce(preview, 500));
 
     $html_enabled.on('change', updateHtmlEnable);
     $use_markdown.on('change', updateHtmlEnable);
