@@ -63,6 +63,7 @@ class Template(models.Model):
     html_body = models.TextField(
         blank=True, verbose_name=_("HTML body template")
     )
+    language = models.CharField(max_length=10, verbose_name=_("Language"))
 
     class Meta:
         ordering = ['name']

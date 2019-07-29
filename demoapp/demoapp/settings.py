@@ -73,3 +73,6 @@ CELERY_RESULT_BACKEND = BROKER_URL
 CELERY_ACCEPT_CONTENT = ['pickle']
 CELERY_TASK_SERIALIZER = 'pickle'
 CELERY_RESULT_SERIALIZER = 'pickle'
+
+LANGUAGE_CODE = 'en-us'
+LANGUAGES = (('en-us', 'English'), ('fr', 'French'))

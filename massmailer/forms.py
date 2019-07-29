@@ -8,7 +8,7 @@ from django.conf import settings
 from django.core.validators import RegexValidator
 from django.utils import timezone
 from django.utils.html import format_html
-from django.utils.translation import ugettext_lazy as _
+from django.utils.translation import get_language, ugettext_lazy as _
 from reversion.models import Version
 
 import massmailer.models
@@ -31,7 +31,14 @@ class TemplateForm(forms.ModelForm):
 
     class Meta:
         model = massmailer.models.Template
-        fields = ['name', 'description', 'subject', 'plain_body', 'html_body']
+        fields = [
+            'name',
+            'description',
+            'subject',
+            'plain_body',
+            'html_body',
+            'language',
+        ]
         widgets = {'description': forms.Textarea(attrs={'rows': 2})}
 
     def __init__(self, *args, **kwargs):
@@ -43,6 +50,13 @@ class TemplateForm(forms.ModelForm):
             and self.instance.html_body.strip()
         ):
             self.fields['html_enabled'].initial = True
+
+        self.fields['language'] = forms.ChoiceField(
+            choices=settings.LANGUAGES,
+            initial=get_language(),
+            widget=forms.Select(),
+            required=True,
+        )
 
     def _revision_count(self):
         if self.instance and self.instance.pk:

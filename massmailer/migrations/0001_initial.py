@@ -69,6 +69,7 @@ class Migration(migrations.Migration):
                 ('subject', models.TextField(verbose_name='Subject template')),
                 ('plain_body', models.TextField(verbose_name='Plaintext body template')),
                 ('html_body', models.TextField(blank=True, verbose_name='HTML body template')),
+                ('language', models.CharField(max_length=10, verbose_name='Language')),
             ],
             options={
                 'verbose_name': 'Template',

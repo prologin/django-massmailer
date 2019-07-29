@@ -71,6 +71,7 @@
         {{ form.use_markdown|as_crispy_field }}
         {{ form.html_body|as_crispy_field }}
         <p id="preview-html-error" class="text-danger"></p>
+        {{ form.language|as_crispy_field }}
         <button type="submit" class="btn btn-primary"><i class="fa fa-save"></i> {% trans "Save template" %}</button>
       </div>
 
