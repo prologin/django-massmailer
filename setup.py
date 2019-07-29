@@ -18,14 +18,14 @@ setup(
     long_description=long_description,
     long_description_content_type="text/markdown",
     install_requires=[
+        "babel",  # i18n template filters
         "bleach",  # HTML sanitizer
         "celery>4",  # task queue
-        "django>=2.1",
         "django-bootstrap-breadcrumbs",  # breadcrumbs in default templates
-        "django-reversion",  # model revision/history
         "django-crispy-forms",  # form builder compatible with Bootstrap
+        "django-reversion",  # model revision/history
+        "django>=2.1",
         "jinja2",  # sane templates
-        "Babel",  # i18n template filters
         "markdown",
         "pyparsing",  # query language parser
     ],
