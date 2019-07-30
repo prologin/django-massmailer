@@ -5,6 +5,7 @@
 {% block title %}{% if template %}{{ template.name }}{% else %}{% trans "New template" %}{% endif %} – {% trans "Mailing" %}{% endblock %}
 
 {% block extra_head %}
+  {{ block.super }}
   <link rel="stylesheet" type="text/css" href="{% static 'massmailer/vendor/select2.min.css' %}">
   <link rel="stylesheet" type="text/css" href="{% static 'massmailer/massmailer.css' %}">
 {% endblock %}
@@ -129,6 +130,7 @@
 {% endblock %}
 
 {% block extra_script %}
+  {{ block.super }}
   <script type="text/javascript">
     var PREVIEW_URL = '{% url 'massmailer:template:preview' %}';
   </script>
