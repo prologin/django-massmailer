@@ -11,6 +11,7 @@ setup(
     author_email="info@prologin.org",
     license="GPL3",
     packages=["massmailer"],
+    include_package_data=True,
     description=(
         "A standalone Django app to send templated emails in batch. "
         "Features a custom query engine and template editor with preview."
@@ -30,14 +31,19 @@ setup(
         "pyparsing",  # query language parser
     ],
     classifiers=[
+        'Environment :: Web Environment',
         'License :: OSI Approved :: GNU General Public License v3 (GPLv3)',
+        'Programming Language :: Python',
         'Programming Language :: Python :: 3.6',
         'Programming Language :: Python :: 3.7',
         'Programming Language :: Python :: 3.8',
+        'Framework :: Django',
         'Framework :: Django :: 2.1',
         'Framework :: Django :: 2.2',
         'Intended Audience :: Developers',
         'Topic :: Communications :: Email',
+        'Topic :: Internet :: WWW/HTTP',
+        'Topic :: Internet :: WWW/HTTP :: Dynamic Content',
     ],
     project_urls={
         'Source': 'https://github.com/prologin/django-massmailer/',
