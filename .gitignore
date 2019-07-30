@@ -1,11 +1,19 @@
-*.pyc
-__pycache__/
+# Good practises
 venv/
-.idea/
-*.egg-info
-pip-wheel-metadata
-build
-dist
 
-node_modules
+# Python
+__pycache__/
+*.pyc
+
+# JavaScript
+node_modules/
 package-lock.json
+
+# Python build system
+pip-wheel-metadata/
+*.egg-info/
+dist/
+build/
+
+# IDEs
+.idea/
