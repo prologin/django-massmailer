@@ -1,12 +1,15 @@
 PYTHON=python3
 DJANGOADMIN=django-admin.py
 
+all:
+
 translations:
 	cd massmailer \
 		&& $(DJANGOADMIN) makemessages -l fr -l en \
 		&& $(DJANGOADMIN) compilemessages
 
 dist:
+	$(MAKE) clean
 	$(PYTHON) setup.py sdist bdist_wheel
 
 upload-dev: dist
