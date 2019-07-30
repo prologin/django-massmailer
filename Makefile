@@ -13,7 +13,7 @@ upload-dev: dist
 	$(PYTHON) -m twine upload --repository-url https://test.pypi.org/legacy/ dist/*
 
 upload: dist
-	$(PYTHON) -m twine upload --repository-url dist/*
+	$(PYTHON) -m twine upload dist/*
 
 clean:
 	$(RM) -r *.egg-info pip-wheel-metadata build dist
