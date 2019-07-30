@@ -22,7 +22,7 @@ from functools import reduce
 
 from massmailer.query_parser import QueryParser, ParseError
 from massmailer.utils.db import ConditionalSum, CaseMapping
-from massmailer.utils.filters import dateformat, datetimeformat
+from massmailer.utils import filters as mfilters
 
 TEMPLATE_OPTS = {
     'autoescape': False,
@@ -90,8 +90,9 @@ class Template(models.Model):
 
     def environment(self, item):
         env = jinja2.sandbox.SandboxedEnvironment(**self.template_opts(item))
-        env.filters['datetimeformat'] = datetimeformat
-        env.filters['dateformat'] = dateformat
+        env.filters['format_datetime'] = mfilters.format_datetime
+        env.filters['format_date'] = mfilters.format_date
+        env.filters['format_time'] = mfilters.format_time
         return env
 
     def template(self, item: TemplateItem):

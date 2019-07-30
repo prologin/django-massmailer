@@ -9,12 +9,18 @@ def get_locale(ctx):
 
 
 @jinja2.contextfilter
-def datetimeformat(ctx, date, format='full'):
+def format_datetime(ctx, date, format='full'):
     locale = get_locale(ctx)
     return babel.dates.format_datetime(date, format=format, locale=locale)
 
 
 @jinja2.contextfilter
-def dateformat(ctx, date, format='full'):
+def format_date(ctx, date, format='full'):
     locale = get_locale(ctx)
     return babel.dates.format_date(date, format=format, locale=locale)
+
+
+@jinja2.contextfilter
+def format_time(ctx, date, format='full'):
+    locale = get_locale(ctx)
+    return babel.dates.format_time(date, format=format, locale=locale)
