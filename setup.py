@@ -10,7 +10,7 @@ setup(
     author="Association Prologin",
     author_email="info@prologin.org",
     license="GPL3",
-    packages=find_namespace_packages(include=['massmailer.*']),
+    packages=find_namespace_packages(include=['massmailer', 'massmailer.*']),
     include_package_data=True,
     description=(
         "A standalone Django app to send templated emails in batch. "
