@@ -11,8 +11,8 @@ msgid ""
 msgstr ""
 "Project-Id-Version: django-massmailer v0.1\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2019-07-21 23:54+0200\n"
-"PO-Revision-Date: 2019-07-21 23:55+0200\n"
+"POT-Creation-Date: 2019-07-30 20:13+0200\n"
+"PO-Revision-Date: 2019-07-30 20:13+0200\n"
 "Last-Translator: \n"
 "Language-Team: \n"
 "Language: fr\n"
@@ -38,38 +38,38 @@ msgstr "Générer le HTML depuis le texte brut"
 msgid "Useful queries"
 msgstr "Requêtes utiles"
 
-#: forms.py:65
+#: forms.py:79
 msgid "You must provide an HTML template if HTML is enabled."
 msgstr "Vous devez fournir un gabarit HTML si vous activez le HTML."
 
-#: forms.py:77
+#: forms.py:91
 #, python-format
 msgid "i am fine bothering %(n)s people"
 msgstr "ok pour ennuyer %(n)s personnes"
 
-#: forms.py:87
+#: forms.py:101
 msgid "Foolproofing"
 msgstr "Anti-stupidité"
 
-#: forms.py:92
+#: forms.py:106
 #, python-format
 msgid "Type “%s” above"
 msgstr "Recopiez “%s” ci-dessus"
 
-#: forms.py:103
+#: forms.py:117
 msgid "Send"
 msgstr "Envoyer"
 
-#: forms.py:112
+#: forms.py:126
 #, python-format
 msgid "Actually send to %(n)s people right now"
 msgstr "Vraiment envoyer à %(n)s personnes, immédiatement"
 
-#: models.py:59 models.py:155
+#: models.py:59 models.py:160
 msgid "Name"
 msgstr "Nom"
 
-#: models.py:60 models.py:156
+#: models.py:60 models.py:161
 msgid "Description"
 msgstr "Description"
 
@@ -85,57 +85,61 @@ msgstr "Gabarit en texte brut"
 msgid "HTML body template"
 msgstr "Gabarit en HTML"
 
-#: models.py:69 models.py:284 templates/massmailer/batch-emails.html:19
+#: models.py:66
+msgid "Language"
+msgstr ""
+
+#: models.py:70 models.py:289 templates/massmailer/batch-emails.html:19
 #: templates/massmailer/batch-list.html:25
 #: templates/massmailer/template/details.html:44
 msgid "Template"
 msgstr "Gabarit"
 
-#: models.py:70 templates/massmailer/dashboard.html:26
+#: models.py:71 templates/massmailer/dashboard.html:26
 #: templates/massmailer/template/details.html:14
 msgid "Templates"
 msgstr "Gabarits"
 
-#: models.py:157 models.py:167 models.py:291
+#: models.py:162 models.py:172 models.py:296
 #: templates/massmailer/batch-emails.html:20
 #: templates/massmailer/batch-list.html:26
 msgid "Query"
 msgstr "Requête"
 
-#: models.py:162
+#: models.py:167
 msgid "Useful with templates"
 msgstr "Utile avec les gabarits"
 
-#: models.py:168 templates/massmailer/dashboard.html:47
+#: models.py:173 templates/massmailer/dashboard.html:47
 #: templates/massmailer/query/details.html:14
 msgid "Queries"
 msgstr "Requêtes"
 
-#: models.py:200
+#: models.py:205
 #, python-format
 msgid "The root model is not %(model)s. You must provide a `user` alias."
 msgstr ""
 "Le modèle racine n'est pas %(model)s. Vous devez fournir un alias `user`."
 
-#: models.py:208
+#: models.py:213
 #, python-format
 msgid "%(label)s.%(field)s is not %(model)s"
 msgstr "%(label)s.%(field)s n'est pas %(model)s"
 
-#: models.py:218
+#: models.py:223
 #, python-format
 msgid "%(label)s has no field `%(field)s`"
 msgstr "%(label)s n'a pas de champ `%(field)s`"
 
-#: models.py:277
+#: models.py:282
 msgid "Optional name"
 msgstr "Nom (optionnel)"
 
-#: models.py:303 templates/massmailer/batch-emails.html:5
+#: models.py:308 templates/massmailer/batch-emails.html:5
 msgid "Batch"
 msgstr "Lot"
 
-#: models.py:304 templates/massmailer/batch-create.html:9
+#: models.py:309 templates/massmailer/batch-create.html:9
 #: templates/massmailer/batch-emails.html:9
 #: templates/massmailer/batch-list.html:5
 #: templates/massmailer/batch-list.html:9
@@ -144,7 +148,7 @@ msgstr "Lot"
 msgid "Batches"
 msgstr "Lots"
 
-#: models.py:310
+#: models.py:315
 #, python-format
 msgid "Batch %(id)s"
 msgstr "Lot %(id)s"
@@ -305,7 +309,7 @@ msgid "Save query"
 msgstr "Enregistrer la requête"
 
 #: templates/massmailer/query/details.html:50
-#: templates/massmailer/template/details.html:79
+#: templates/massmailer/template/details.html:80
 msgid "Preview"
 msgstr "Prévisualisation"
 
@@ -390,15 +394,15 @@ msgstr "Modifier le gabarit %(name)s"
 msgid "Preview with query"
 msgstr "Prévisualiser avec la requête"
 
-#: templates/massmailer/template/details.html:75
+#: templates/massmailer/template/details.html:76
 msgid "Save template"
 msgstr "Enregistrer le gabarit"
 
-#: templates/massmailer/template/details.html:84
+#: templates/massmailer/template/details.html:86
 msgid "Plaintext"
 msgstr "Texte brut"
 
-#: templates/massmailer/template/details.html:87
+#: templates/massmailer/template/details.html:89
 msgid "HTML"
 msgstr "HTML"
 
@@ -410,7 +414,11 @@ msgstr ""
 "Le formulaire a été enregistré pendant vous le modifiez. Veuillez fusionner "
 "vos modifications avec la version actuelle."
 
-#: views.py:296
+#: views.py:125
+msgid "You don't have the permission to view query results."
+msgstr "Vous n'avez pas la permission de voir les résultats de la requête."
+
+#: views.py:309
 #, python-format
 msgid "Syntax error at position %(pos)s."
 msgstr "Erreur de syntaxe à la position %(pos)s."

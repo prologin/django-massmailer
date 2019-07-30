@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2019-07-21 23:54+0200\n"
+"POT-Creation-Date: 2019-07-30 20:13+0200\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -34,38 +34,38 @@ msgstr ""
 msgid "Useful queries"
 msgstr ""
 
-#: forms.py:65
+#: forms.py:79
 msgid "You must provide an HTML template if HTML is enabled."
 msgstr ""
 
-#: forms.py:77
+#: forms.py:91
 #, python-format
 msgid "i am fine bothering %(n)s people"
 msgstr ""
 
-#: forms.py:87
+#: forms.py:101
 msgid "Foolproofing"
 msgstr ""
 
-#: forms.py:92
+#: forms.py:106
 #, python-format
 msgid "Type “%s” above"
 msgstr ""
 
-#: forms.py:103
+#: forms.py:117
 msgid "Send"
 msgstr ""
 
-#: forms.py:112
+#: forms.py:126
 #, python-format
 msgid "Actually send to %(n)s people right now"
 msgstr ""
 
-#: models.py:59 models.py:155
+#: models.py:59 models.py:160
 msgid "Name"
 msgstr ""
 
-#: models.py:60 models.py:156
+#: models.py:60 models.py:161
 msgid "Description"
 msgstr ""
 
@@ -81,56 +81,60 @@ msgstr ""
 msgid "HTML body template"
 msgstr ""
 
-#: models.py:69 models.py:284 templates/massmailer/batch-emails.html:19
+#: models.py:66
+msgid "Language"
+msgstr ""
+
+#: models.py:70 models.py:289 templates/massmailer/batch-emails.html:19
 #: templates/massmailer/batch-list.html:25
 #: templates/massmailer/template/details.html:44
 msgid "Template"
 msgstr ""
 
-#: models.py:70 templates/massmailer/dashboard.html:26
+#: models.py:71 templates/massmailer/dashboard.html:26
 #: templates/massmailer/template/details.html:14
 msgid "Templates"
 msgstr ""
 
-#: models.py:157 models.py:167 models.py:291
+#: models.py:162 models.py:172 models.py:296
 #: templates/massmailer/batch-emails.html:20
 #: templates/massmailer/batch-list.html:26
 msgid "Query"
 msgstr ""
 
-#: models.py:162
+#: models.py:167
 msgid "Useful with templates"
 msgstr ""
 
-#: models.py:168 templates/massmailer/dashboard.html:47
+#: models.py:173 templates/massmailer/dashboard.html:47
 #: templates/massmailer/query/details.html:14
 msgid "Queries"
 msgstr ""
 
-#: models.py:200
+#: models.py:205
 #, python-format
 msgid "The root model is not %(model)s. You must provide a `user` alias."
 msgstr ""
 
-#: models.py:208
+#: models.py:213
 #, python-format
 msgid "%(label)s.%(field)s is not %(model)s"
 msgstr ""
 
-#: models.py:218
+#: models.py:223
 #, python-format
 msgid "%(label)s has no field `%(field)s`"
 msgstr ""
 
-#: models.py:277
+#: models.py:282
 msgid "Optional name"
 msgstr ""
 
-#: models.py:303 templates/massmailer/batch-emails.html:5
+#: models.py:308 templates/massmailer/batch-emails.html:5
 msgid "Batch"
 msgstr ""
 
-#: models.py:304 templates/massmailer/batch-create.html:9
+#: models.py:309 templates/massmailer/batch-create.html:9
 #: templates/massmailer/batch-emails.html:9
 #: templates/massmailer/batch-list.html:5
 #: templates/massmailer/batch-list.html:9
@@ -139,7 +143,7 @@ msgstr ""
 msgid "Batches"
 msgstr ""
 
-#: models.py:310
+#: models.py:315
 #, python-format
 msgid "Batch %(id)s"
 msgstr ""
@@ -300,7 +304,7 @@ msgid "Save query"
 msgstr ""
 
 #: templates/massmailer/query/details.html:50
-#: templates/massmailer/template/details.html:79
+#: templates/massmailer/template/details.html:80
 msgid "Preview"
 msgstr ""
 
@@ -381,15 +385,15 @@ msgstr ""
 msgid "Preview with query"
 msgstr ""
 
-#: templates/massmailer/template/details.html:75
+#: templates/massmailer/template/details.html:76
 msgid "Save template"
 msgstr ""
 
-#: templates/massmailer/template/details.html:84
+#: templates/massmailer/template/details.html:86
 msgid "Plaintext"
 msgstr ""
 
-#: templates/massmailer/template/details.html:87
+#: templates/massmailer/template/details.html:89
 msgid "HTML"
 msgstr ""
 
@@ -399,7 +403,11 @@ msgid ""
 "current version."
 msgstr ""
 
-#: views.py:296
+#: views.py:125
+msgid "You don't have the permission to view query results."
+msgstr ""
+
+#: views.py:309
 #, python-format
 msgid "Syntax error at position %(pos)s."
 msgstr ""
