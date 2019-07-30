@@ -1,5 +1,5 @@
 import os.path
-from setuptools import setup
+from setuptools import setup, find_namespace_packages
 
 with open(os.path.join(os.path.dirname(__file__), "README.md"), "r") as fh:
     long_description = fh.read()
@@ -10,7 +10,7 @@ setup(
     author="Association Prologin",
     author_email="info@prologin.org",
     license="GPL3",
-    packages=["massmailer"],
+    packages=find_namespace_packages(include=['massmailer.*']),
     include_package_data=True,
     description=(
         "A standalone Django app to send templated emails in batch. "
