@@ -6,7 +6,7 @@ with open(os.path.join(os.path.dirname(__file__), "README.md"), "r") as fh:
 
 setup(
     name="django-massmailer",
-    version='0.1',
+    version='0.2',
     author="Association Prologin",
     author_email="info@prologin.org",
     license="GPL3",
