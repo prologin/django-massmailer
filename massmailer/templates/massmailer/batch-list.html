@@ -1,8 +1,8 @@
-{% extends "massmailer/base.html" %}
+{% extends "massmailer/common.html" %}
 {% load i18n l10n staticfiles %}
 {% load django_bootstrap_breadcrumbs crispy_forms_tags %}
 
-{% block title %}{% trans "Batches" %} – {% trans "Mailing" %}{% endblock %}
+{% block title %}{% trans "Batches" %} – {{ block.super }}{% endblock %}
 
 {% block breadcrumbs %}
   {{ block.super }}

@@ -1,8 +1,8 @@
-{% extends "massmailer/base.html" %}
+{% extends "massmailer/common.html" %}
 {% load i18n staticfiles %}
 {% load django_bootstrap_breadcrumbs crispy_forms_tags %}
 
-{% block title %}{% if template %}{{ template.name }}{% else %}{% trans "New template" %}{% endif %} – {% trans "Mailing" %}{% endblock %}
+{% block title %}{% if template %}{{ template.name }}{% else %}{% trans "New template" %}{% endif %} – {{ block.super }}{% endblock %}
 
 {% block extra_head %}
   {{ block.super }}

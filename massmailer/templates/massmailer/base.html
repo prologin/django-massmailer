@@ -6,10 +6,7 @@
 <html lang="{{ LANGUAGE_CODE }}">
 <head>
   <meta charset="utf-8">
-  <title>{% block title %}{% endblock %}</title>
-
-  <link rel="stylesheet" href="{% static 'massmailer/vendor/bootstrap.min.css' %}"/>
-  <link rel="stylesheet" href="{% static 'massmailer/vendor/font-awesome/css/font-awesome.min.css' %}"/>
+  <title>{% block title %}django-massmailer{% endblock %}</title>
 
   {% block extra_head %}{% endblock %}
 </head>
@@ -28,7 +25,6 @@
   <div class="container">
     {% block breadcrumbs %}
       {% clear_breadcrumbs %}
-      {% breadcrumb_for 'massmailer:dashboard' %}django-massmailer{% endbreadcrumb_for %}
     {% endblock %}
     {% render_breadcrumbs "django_bootstrap_breadcrumbs/bootstrap3.html" %}
 
@@ -41,10 +37,6 @@
       django-massmailer — Copyright © 2019 Association Prologin
     </div>
   </footer>
-
-  {# Scripts #}
-  <script src="{% static 'massmailer/vendor/jquery.min.js' %}"></script>
-  <script src="{% static 'massmailer/vendor/bootstrap.min.js' %}"></script>
 
   {% block extra_script %}{% endblock %}
 </body>
