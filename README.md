@@ -30,7 +30,7 @@ First, install `django-massmailer` and its Python dependencies:
 pip install django-massmailer
 ```
 
-Then, add `massmailer` and its 3 Django dependencies to your project's
+Then, add `massmailer` and its Django dependencies to your project's
 `INSTALLED_APPS`:
 
 ```python
@@ -53,6 +53,12 @@ urlpatterns = [
 ]
 ```
 
+Then, execute the migrations to create the massmailer models:
+
+```bash
+python3 manage.py migrate
+```
+
 You also need to have a working Celery setup with your website.
 You can check out the [official
 tutorial](https://docs.celeryproject.org/en/latest/django/first-steps-with-django.html)
@@ -63,13 +69,98 @@ application:
 - [`demoapp/celery.py`](https://github.com/prologin/django-massmailer/blob/master/demoapp/demoapp/celery.py)
 - [`demoapp/settings.py`](https://github.com/prologin/django-massmailer/blob/master/demoapp/demoapp/settings.py)
 
-## Documentation
+## How to use
 
-TODO
+### Permissions
+
+Only staff users can see the mailing dashboard. By default, only superusers can
+use anything in massmailer. There are three categories of permissions you
+can grant to some staff users to allow them to make changes:
+
+- `mailing.{view,create,change,delete}_template` to view, create, change and
+  delete templates.
+- `mailing.{view,create,change,delete}_query` to view, create, change and
+  delete queries.
+  **⚠ These permissions give access to personal user data. ⚠**
+- `mailing.{view,create,change,delete}_batch` to view, send, change and
+  delete batches.
+  **⚠ These permissions give access to sending bulk e-mails. ⚠**
+
+Because `django-massmailer` intrinsically gives access to powerful features
+(access to user data and sending e-mails in bulk) it is strongly recommended to
+be as restrictive as possible when granting these permissions to prevent abuse
+or spam.
+
+### Query syntax
+
+`django-massmailer` allows you to write queries in a domain-specific language
+to select the users you want to reach. You can think of it as heavily
+simplified SQL with a syntax that looks like filters in the Django ORM.
+
+Here is a short demonstration of the syntax:
+
+```python
+SomeModel [as name]
+  .field = 42
+  (.field contains "string" or
+   .field contains i"case insensitive")
+  count(.related_field) > 10
+
+alias some_name = .some_field
+```
+
+Filters are implicity joined by the and operator. If you are not querying on
+the User model directly, you must create a user alias targeting a field
+containing the related user.
+
+### Templates
+
+Templates use the [Jinja2 templating engine](http://jinja.pocoo.org/) to
+generate the contents of the e-mails. The model selected in your query will be
+passed directly in the context of the template, as well as the different
+aliases that were defined in the query.
+
+There are three templates you have to fill, one for the subject line, one for
+the plaintext content, and optionally one for the HTML content. The HTML
+template can also be generated directly from the plaintext e-mail.
+
+Example:
+
+```jinja
+Greetings, {{ user.get_full_name().strip().title() }}!
+
+{% if user.is_staff %}With great power comes great responsibility.{% endif %}
+```
+
+#### Template filters
+
+In addition to the Jinja2 [builtin
+filters](http://jinja.pocoo.org/docs/2.10/templates/#builtin-filters),
+`django-massmailer` provides a few other convenience filters.
+
+The following filters are directly passed to the [Babel functions of the same
+name](http://babel.pocoo.org/en/latest/api/dates.html) using the locale set in
+template:
+
+- `format_date`: formats the date according to a given pattern.
+- `format_time`: formats the time according to a given pattern.
+- `format_datetime`: formats the datetime according to a given pattern.
+
+Example:
+
+```jinja
+You have joined our website on {{ user.date_joined|format_date }}.
+```
 
 ## Contributing
 
-TODO
+`django-massmailer` enforces various style constraints. You need to install
+pre-commit hooks to make sure your commits respect them:
+
+```bash
+pip install -r requirements-dev.txt
+pre-commit install
+```
 
 ## Licence
 
