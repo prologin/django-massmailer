@@ -10,6 +10,7 @@ class SomeEnum(enum.Enum):
 
 class SomeModel(models.Model):
     text_field = models.CharField(max_length=128)
+    other_text = models.CharField(max_length=128, default="")
     int_field = models.IntegerField()
     bool_field = models.BooleanField(null=True)
 

@@ -8,7 +8,7 @@ import pyparsing as p
 
 from django.apps import apps
 from django.db import models
-from django.db.models import Q
+from django.db.models import Q, F
 
 
 class ParseError(ValueError):
@@ -368,15 +368,18 @@ class QueryParser:
             p.Optional(p.Literal('i'))('nocase')
             + p.quotedString.setParseAction(p.removeQuotes)('string')
         ).setParseAction(parse_string)
-        value = (string | numscalar | boolean | enumvalue).setParseAction(
-            lambda t: t[0]
-        )('value')
-        model = p.Regex(r'([A-Z][a-z0-9]*)+').setParseAction(parse_model)(
-            'model'
-        )
         field_name = p.OneOrMore(p.Suppress('.') + alpha_under).setParseAction(
             parse_field
         )('field')
+        field_ref = p.OneOrMore(p.Suppress('.') + alpha_under).setParseAction(
+            lambda t: F(parse_field(t))
+        )
+        value = (
+            string | numscalar | boolean | enumvalue | field_ref
+        ).setParseAction(lambda t: t[0])('value')
+        model = p.Regex(r'([A-Z][a-z0-9]*)+').setParseAction(parse_model)(
+            'model'
+        )
         func_call = (
             p.Word(p.alphas)('func_name')
             + p.Suppress('(')
