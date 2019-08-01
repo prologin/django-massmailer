@@ -56,10 +56,8 @@ def build_grammar():
             # enum = self.available_enums[enum]
         except KeyError:
             raise ParseError(
-                "Unknown enum '{}'.\n\nAvailable enums: {}".format(
-                    enum, ', '.join(enums.keys())
-                )
-            )
+                f"Unknown enum '{enum}'. Available enums: {', '.join(enums.keys())}"
+            ) from None
         try:
             # try with member name
             member = enum[member]
@@ -69,8 +67,8 @@ def build_grammar():
                 member = enum(member)
             except ValueError:
                 raise ParseError(
-                    "Invalid member '{}' of {}".format(member, enum)
-                )
+                    f"{enum} has no member {member}. Valid members: {', '.join(e.name for e in enum)}."
+                ) from None
         return member.value
 
     def parse_func_call(tokens):
@@ -81,11 +79,19 @@ def build_grammar():
             Value(arg) if not isinstance(arg, Combinable) else arg
             for arg in args
         ]
-        return funcs[name](*args)
+        try:
+            func = funcs[name]
+        except KeyError:
+            raise ParseError(f"Unknown function '{name}'.") from None
+        return func(*args)
 
     def parse_model(tokens):
         models = GETTERS[2]
-        return models[tokens['model']]
+        name = tokens['model']
+        try:
+            return models[name]
+        except KeyError:
+            raise ParseError(f"Unknown model '{name}'.") from None
 
     def parse_string(tokens):
         string = tokens[0]['string']

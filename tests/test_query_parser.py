@@ -2,7 +2,7 @@ import unittest
 
 from django.test import TestCase
 
-from massmailer.query_parser import QueryParser
+from massmailer.query_parser import QueryParser, ParseError
 
 
 class QueryParserTestCase(TestCase):
@@ -41,17 +41,20 @@ class QueryParserTestCase(TestCase):
         self.assertIn('SomeModel', qp.available_models)
         self.assertIs(qp.available_models['SomeModel'], SomeModel)
 
-    def test_query_with_model(self):
+    def test_query_no_such_model(self):
         qp = QueryParser(load_django_funcs=False)
+        with self.assertRaisesRegex(ParseError, 'Unknown.+model.+Garbage'):
+            qp.parse_query("Garbage")
 
-        with self.assertRaisesMessage(KeyError, 'Garbage'):
-            qp.parse_query('Garbage as foo')
-
-        qp.parse_query('SomeModel as foo')
+    def test_query_simple(self):
+        qp = QueryParser(load_django_funcs=False)
+        r = qp.parse_query("SomeModel")
+        self.assertEqual(r.queryset.count(), 3)
 
     def test_query_comment(self):
         qp = QueryParser(load_django_funcs=False)
-        qp.parse_query("# a comment\nSomeModel")
+        r = qp.parse_query("# a comment\nSomeModel")
+        self.assertEqual(r.queryset.count(), 3)
 
     def test_query_text_field_predicate(self):
         qp = QueryParser(load_django_funcs=False)
@@ -254,7 +257,9 @@ class QueryParserTestCase(TestCase):
         self.assertEqual(r.queryset.count(), 1)
         self.assertEqual(r.queryset.first().text_field, 'foo')
 
-        with self.assertRaisesMessage(Exception, 'garbage'):
+    def test_query_no_such_func(self):
+        qp = QueryParser(load_django_funcs=False)
+        with self.assertRaisesRegex(ParseError, r'Unknown.+garbage'):
             qp.parse_query("SomeModel garbage(.text_field) = 1")
 
     def test_query_func_substr(self):
@@ -270,7 +275,7 @@ class QueryParserTestCase(TestCase):
     def test_query_enum(self):
         from tests.models import SomeEnum
 
-        qp = QueryParser()
+        qp = QueryParser(load_django_funcs=False)
         # Register the enum
         qp.available_enums['MyApp.SomeEnum'] = SomeEnum
 
@@ -282,10 +287,20 @@ class QueryParserTestCase(TestCase):
         self.assertEqual(r.queryset.count(), 1)
         self.assertEqual(r.queryset.first().text_field, SomeEnum.bar.value)
 
-        with self.assertRaisesMessage(
-            Exception, "Invalid member 'garbage' of <enum 'SomeEnum'>"
+    def test_query_no_such_enum(self):
+        qp = QueryParser(load_django_funcs=False)
+
+        with self.assertRaisesRegex(ParseError, r"Unknown.+Do\.Not"):
+            qp.parse_query("SomeModel .text_field = Do.Not.Exists")
+
+    def test_query_no_such_enum_member(self):
+        from tests.models import SomeEnum
+
+        qp = QueryParser(load_django_funcs=False)
+        # Register the enum
+        qp.available_enums['MyApp.SomeEnum'] = SomeEnum
+
+        with self.assertRaisesRegex(
+            ParseError, r"SomeEnum.+no member.+garbage"
         ):
             qp.parse_query("SomeModel .text_field = MyApp.SomeEnum.garbage")
-
-        with self.assertRaisesMessage(Exception, "Unknown enum"):
-            qp.parse_query("SomeModel .text_field = Not.Even.close")
