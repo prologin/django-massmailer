@@ -8,7 +8,8 @@ import pyparsing as p
 
 from django.apps import apps
 from django.db import models
-from django.db.models import Q, F
+from django.db.models import Q, F, Value
+from django.db.models.expressions import Combinable
 
 
 class ParseError(ValueError):
@@ -17,6 +18,10 @@ class ParseError(ValueError):
 
 class CaseInsensitive(str):
     pass
+
+
+# Improves parsing speed A LOT.
+p.ParserElement.enablePackrat()
 
 
 class ParseResult:
@@ -62,12 +67,15 @@ class QueryParser:
 
         # this is a comment
         SomeModel [as name]
-          .field = 42
+          # basic maths:
+          .field = (40 + 2**6) / 1e10
           # two field predicates are joined with "and" if not explicitly using
           # "or"
           count(.related_field) > 10
           # function arguments are supported:
           substr(.field, 3, 4) = "brut"
+          # expressions (including fields) as value:
+          .first_field = concat("foo", .second_field)
           # there is a support for literal enums, that get replaced with their
           # value
           .field = SomeClass.SomeEnum.some_enum_member
@@ -292,9 +300,12 @@ class QueryParser:
 
         def parse_func_call(tokens):
             name = tokens.get('func_name')
-            field = tokens.get('func_field')
             args = tokens.get('func_args', ())
-            return self.available_funcs[name](field, *args)
+            args = [
+                Value(arg) if not isinstance(arg, Combinable) else arg
+                for arg in args
+            ]
+            return self.available_funcs[name](*args)
 
         def parse_model(tokens):
             return self.available_models[tokens['model']]
@@ -319,6 +330,16 @@ class QueryParser:
             parts = tokens[0]
             return functools.reduce(generic_annotated_op(operator.ior), parts)
 
+        def parse_arith(op):
+            def parse(tokens):
+                lhs, rhs = tokens[0]
+                return op(lhs, rhs)
+
+            return parse
+
+        def parse_literal(tokens):
+            return ast.literal_eval(tokens[0])
+
         def parse(tokens):
             q, annotations = tokens.get('filter', (Q(), {}))
             model = tokens['model']
@@ -338,27 +359,20 @@ class QueryParser:
 
         # The grammar
         G = p.Group
+
         comments = p.Suppress(p.ZeroOrMore(p.pythonStyleComment))
-        point = p.Literal('.')
-        expo = p.CaselessLiteral('e')
-        plusorminus = p.Literal('+') | p.Literal('-')
-        number = p.Word(p.nums)
-        integer = p.Combine(p.Optional(plusorminus) + number)
-        floatnumber = p.Combine(
-            integer
-            + p.Optional(point + p.Optional(number))
-            + p.Optional(expo + integer)
+
+        # Literals, atoms
+        hex = p.Regex(r'[+-]?0x[0123456789abcdef]+', re.I).setParseAction(
+            parse_literal
         )
-        hexnumber = p.Combine(
-            p.Optional(plusorminus)
-            + p.CaselessLiteral('0x')
-            + p.Word(p.hexnums)
+        oct = p.Regex(r'[+-]?0o[01234567]+', re.I).setParseAction(
+            parse_literal
         )
-        numscalar = (hexnumber | floatnumber | integer).setParseAction(
-            lambda t: ast.literal_eval(t[0])
-        )
-        boolean = (p.Keyword('true') | p.Keyword('false')).setParseAction(
-            lambda t: t[0].lower() == 'true'
+        bin = p.Regex(r'[+-]?0b[01]+', re.I).setParseAction(parse_literal)
+        numscalar = hex | oct | bin | p.pyparsing_common.number
+        boolean = p.Regex(r'([Tt]rue|[Ff]alse)').setParseAction(
+            lambda t: t[0] in ('True', 'true')
         )
         alpha_under = p.Regex(r'[a-z][a-z0-9]*(_[a-z0-9]+)*', re.I)
         enumvalue = p.Combine(
@@ -368,25 +382,58 @@ class QueryParser:
             p.Optional(p.Literal('i'))('nocase')
             + p.quotedString.setParseAction(p.removeQuotes)('string')
         ).setParseAction(parse_string)
-        field_name = p.OneOrMore(p.Suppress('.') + alpha_under).setParseAction(
-            parse_field
-        )('field')
-        field_ref = p.OneOrMore(p.Suppress('.') + alpha_under).setParseAction(
-            lambda t: F(parse_field(t))
-        )
-        value = (
-            string | numscalar | boolean | enumvalue | field_ref
-        ).setParseAction(lambda t: t[0])('value')
+        field_name_base = p.OneOrMore(p.Suppress('.') + alpha_under)
+        field_name = field_name_base.setParseAction(parse_field)('field')
         model = p.Regex(r'([A-Z][a-z0-9]*)+').setParseAction(parse_model)(
             'model'
         )
+        field_ref = field_name_base.setParseAction(lambda t: F(parse_field(t)))
+        value = p.Forward()
         func_call = (
             p.Word(p.alphas)('func_name')
             + p.Suppress('(')
-            + field_name('func_field')
-            + p.Optional(p.Suppress(',') + p.delimitedList(value))('func_args')
+            + p.delimitedList(value)('func_args')
             + p.Suppress(')')
         ).setParseAction(parse_func_call)('func_call')
+        arith_value = (
+            string | numscalar | boolean | enumvalue | field_ref | func_call
+        ).setParseAction(lambda t: t[0])
+        value << p.infixNotation(
+            arith_value,
+            [
+                (p.Suppress('-'), 1, p.opAssoc.RIGHT, lambda t: -t[0][0]),
+                (
+                    p.Suppress('**'),
+                    2,
+                    p.opAssoc.LEFT,
+                    parse_arith(operator.pow),
+                ),
+                (
+                    p.Suppress('*'),
+                    2,
+                    p.opAssoc.LEFT,
+                    parse_arith(operator.mul),
+                ),
+                (
+                    p.Suppress('/'),
+                    2,
+                    p.opAssoc.LEFT,
+                    parse_arith(operator.truediv),
+                ),
+                (
+                    p.Suppress('+'),
+                    2,
+                    p.opAssoc.LEFT,
+                    parse_arith(operator.add),
+                ),
+                (
+                    p.Suppress('-'),
+                    2,
+                    p.opAssoc.LEFT,
+                    parse_arith(operator.sub),
+                ),
+            ],
+        )('value')
         field = field_name | func_call
         is_kw = p.Suppress(p.Keyword('is'))
         negation = p.Optional(p.Keyword('not')).setParseAction(
