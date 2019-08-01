@@ -11,7 +11,7 @@ class SomeEnum(enum.Enum):
 class SomeModel(models.Model):
     text_field = models.CharField(max_length=128)
     int_field = models.IntegerField()
-    bool_field = models.BooleanField()
+    bool_field = models.BooleanField(null=True)
 
 
 class SomeChild(models.Model):

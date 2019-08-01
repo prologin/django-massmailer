@@ -1,5 +1,9 @@
 import ast
+import functools
+import itertools
+import operator
 import re
+
 import pyparsing as p
 
 from django.apps import apps
@@ -62,6 +66,8 @@ class QueryParser:
           # two field predicates are joined with "and" if not explicitly using
           # "or"
           count(.related_field) > 10
+          # function arguments are supported:
+          substr(.field, 3, 4) = "brut"
           # there is a support for literal enums, that get replaced with their
           # value
           .field = SomeClass.SomeEnum.some_enum_member
@@ -92,7 +98,7 @@ class QueryParser:
             self.available_enums.update(REGISTERED_ENUMS)
 
     def parse_query(self, query: str) -> ParseResult:
-        func_i = 0
+        func_name_gen = itertools.count(0)
 
         def parse_enum(tokens):
             enum, member = tokens[0].rsplit('.', 1)
@@ -113,118 +119,211 @@ class QueryParser:
                     member = enum(member)
                 except ValueError:
                     raise ParseError(
-                        "invalid member '{}' of {}".format(member, enum)
+                        "Invalid member '{}' of {}".format(member, enum)
                     )
             return member.value
 
         def parse_string(tokens):
-            string = tokens['string']
-            if tokens.get('nocase'):
+            string = tokens[0]['string']
+            if tokens[0].get('nocase'):
                 return CaseInsensitive(string)
             return string
 
         def parse_field(tokens):
             return '__'.join(tokens)
 
-        def parse_clause(tokens):
-            nonlocal func_i
-            annotations = {}
-            field = tokens.get('field')
-            value = tokens.get('value')
-            negation = tokens.get('negation', False)
-            insensitive = isinstance(value, CaseInsensitive)
+        def generic_negate(t):
+            return t.get('negate') is True
 
-            if tokens.get('operation'):
-                func = self.available_funcs[tokens['func_name']]
-                name = 'func_{}'.format(func_i)
-                func_i += 1
-                annotations[name] = func(tokens['func_field'])
-                field = name
+        def generic_value(t):
+            return t.get('value')
 
-            if tokens.get('='):
-                if insensitive:
-                    field += '__iexact'
-            elif tokens.get('!='):
-                negation = True
-            elif tokens.get('<='):
-                field += '__lte'
-            elif tokens.get('>='):
-                field += '__gte'
-            elif tokens.get('<'):
-                field += '__lt'
-            elif tokens.get('>'):
-                field += '__gt'
-            elif tokens.get('empty'):
-                value = ''
-            elif tokens.get('null'):
-                field += '__isnull'
-                value = not negation
-                negation = False
-            elif tokens.get('contains'):
-                if insensitive:
-                    field += '__icontains'
-                else:
-                    field += '__contains'
-            elif tokens.get('startswith'):
-                if insensitive:
-                    field += '__istartswith'
-                else:
-                    field += '__startswith'
-            elif tokens.get('endswith'):
-                if insensitive:
-                    field += '__iendswith'
-                else:
-                    field += '__endswith'
-            elif tokens.get('matches'):
-                if insensitive:
-                    field += '__iregex'
-                else:
-                    field += '__regex'
-            elif tokens.get('between'):
-                field += '__range'
-                value = (tokens['min'], tokens['max'])
-            else:
-                raise ParseError("unknown clause token {}".format(tokens))
+        def field_value(field_getter, value_getter, negate_getter=None):
+            """
+            Generic parser for <field> <op> <value> that builds Q(field=value).
 
-            q = Q(**{field: value})
-            if negation:
-                q = ~q
-            return q, annotations
+            Supports function calls on the field, ie. func(<field>) <op> <value>
+                that returns Q(func_result=value) and annotates the query with
+                func_result=<func>(<field>).
 
-        def parse_filter(tokens):
-            query = Q()
-            annotations = {}
-            operation = 'and'
-            negation = False
-            for token in tokens:
-                if isinstance(token, p.ParseResults):
-                    q, ann = parse_filter(token)
-                    query &= q
-                    annotations.update(ann)
-                elif isinstance(token, str):
-                    if token in ('or', 'and'):
-                        operation = token
-                    elif token == 'not':
-                        negation = True
-                else:
-                    q, ann = token
-                    annotations.update(ann)
-                    if negation:
-                        q = ~q
-                    if operation == 'or':
-                        query |= q
-                    else:
-                        query &= q
-            return query, annotations
+            'field_getter' is invoked with the tokens as param 0 and shall
+                return a format-string in which {} will be replaced with the
+                field name.
+
+            'value_getter' is invoked with the tokens as param 0 and shall
+                return the value.
+
+            If 'negate_getter' is defined, it is invoked with the tokens as
+                param 0. If the return value is True, then the returned queryset
+                is negated (~q).
+
+            Returns (queryset: Q, annotations: dict).
+            """
+
+            def parse(tokens):
+                t = tokens[0]
+                annotations = {}
+                field_name = t.get('field')
+                func_call = t.get('func_call')
+                field_format = field_getter(t)
+
+                if func_call is not None:
+                    field_name = f'func_{next(func_name_gen)}'
+                    annotations[field_name] = func_call
+
+                q = Q(**{field_format.format(field_name): value_getter(t)})
+
+                if negate_getter is not None and negate_getter(t):
+                    q = ~q
+
+                return q, annotations
+
+            return parse
+
+        def unsupported(name):
+            def defaulter(value):
+                raise NotImplementedError(
+                    f"'{name} <{type(value)}>' is unsupported"
+                )
+
+            return defaulter
+
+        def generic_suffix(suffix):
+            def get_field(t):
+                return '{}__' + suffix
+
+            return field_value(get_field, generic_value)
+
+        def generic_case_insensitive_suffix(orm_suffix, defaulter):
+            """
+            Field getter for Django ORM case-insensitive suffixes. Returns a
+            formatter that uses 'orm_suffix' if the value is a normal string,
+            otherwise returns a formatter with 'i' before 'orm_suffix'.
+
+            If the value is neither a string nor a case-insensitive string,
+            returns defaulter(value).
+            """
+
+            def get_field(t):
+                value = t.get('value')
+                if isinstance(value, CaseInsensitive):
+                    return '{}__i' + orm_suffix
+                elif isinstance(value, str):
+                    return '{}__' + orm_suffix
+
+                return defaulter(value)
+
+            return get_field
+
+        def parse_equality():
+            def field_defaulter(value):
+                # other types just need a standard equality
+                return '{}'
+
+            return field_value(
+                generic_case_insensitive_suffix('exact', field_defaulter),
+                generic_value,
+            )
+
+        def parse_contains():
+            return field_value(
+                generic_case_insensitive_suffix(
+                    'contains', unsupported('contains')
+                ),
+                generic_value,
+                generic_negate,
+            )
+
+        def parse_match():
+            return field_value(
+                generic_case_insensitive_suffix('regex', unsupported('match')),
+                generic_value,
+                generic_negate,
+            )
+
+        def parse_startswith():
+            return field_value(
+                generic_case_insensitive_suffix(
+                    'startswith', unsupported('starts with')
+                ),
+                generic_value,
+                generic_negate,
+            )
+
+        def parse_endswith():
+            return field_value(
+                generic_case_insensitive_suffix(
+                    'endswith', unsupported('ends with')
+                ),
+                generic_value,
+                generic_negate,
+            )
+
+        def parse_inequality(tokens):
+            q, annotations = parse_equality()(tokens)
+            return ~q, annotations
+
+        def parse_between():
+            def get_field(t):
+                return '{}__range'
+
+            def get_value(t):
+                return t.get('min'), t.get('max')
+
+            return field_value(get_field, get_value, generic_negate)
+
+        def parse_is_null():
+            def get_field(t):
+                return '{}__isnull'
+
+            def get_value(t):
+                return True
+
+            return field_value(get_field, get_value, generic_negate)
+
+        def parse_is_empty():
+            def get_field(t):
+                return '{}__exact'
+
+            def get_value(t):
+                return ""
+
+            return field_value(get_field, get_value, generic_negate)
+
+        def parse_func_call(tokens):
+            name = tokens.get('func_name')
+            field = tokens.get('func_field')
+            args = tokens.get('func_args', ())
+            return self.available_funcs[name](field, *args)
 
         def parse_model(tokens):
             return self.available_models[tokens['model']]
 
+        def parse_not(tokens):
+            query, annotations = tokens[0][0]
+            return ~query, annotations
+
+        def generic_annotated_op(op):
+            def reducer(a, b):
+                query_a, annotations_a = a
+                query_b, annotations_b = b
+                return op(query_a, query_b), {**annotations_a, **annotations_b}
+
+            return reducer
+
+        def parse_and(tokens):
+            parts = tokens[0]
+            return functools.reduce(generic_annotated_op(operator.iand), parts)
+
+        def parse_or(tokens):
+            parts = tokens[0]
+            return functools.reduce(generic_annotated_op(operator.ior), parts)
+
         def parse(tokens):
-            query, annotations = tokens.get('filter', (Q(), {}))
+            q, annotations = tokens.get('filter', (Q(), {}))
             model = tokens['model']
             model_name = model._meta.model_name
-            qs = model._default_manager.annotate(**annotations).filter(query)
+            qs = model._default_manager.annotate(**annotations).filter(q)
             custom_model_name = tokens.get('model_name')
             if custom_model_name:
                 model_name = custom_model_name[0]
@@ -238,7 +337,7 @@ class QueryParser:
             return result
 
         # The grammar
-        # TODO: implement operation args eg. substr(.field, 1, 5)
+        G = p.Group
         comments = p.Suppress(p.ZeroOrMore(p.pythonStyleComment))
         point = p.Literal('.')
         expo = p.CaselessLiteral('e')
@@ -265,141 +364,139 @@ class QueryParser:
         enumvalue = p.Combine(
             alpha_under + '.' + alpha_under + '.' + alpha_under
         ).setParseAction(parse_enum)
-        string = (
-            p.Optional(p.Literal('i')).setResultsName('nocase')
-            + p.quotedString.setParseAction(p.removeQuotes).setResultsName(
-                'string'
-            )
+        string = G(
+            p.Optional(p.Literal('i'))('nocase')
+            + p.quotedString.setParseAction(p.removeQuotes)('string')
         ).setParseAction(parse_string)
-        value = (
-            (string | numscalar | boolean | enumvalue)
-            .setResultsName('value')
-            .setParseAction(lambda t: t[0])
+        value = (string | numscalar | boolean | enumvalue).setParseAction(
+            lambda t: t[0]
+        )('value')
+        model = p.Regex(r'([A-Z][a-z0-9]*)+').setParseAction(parse_model)(
+            'model'
         )
-        model = (
-            p.Regex(r'([A-Z][a-z0-9]*)+')
-            .setParseAction(parse_model)
-            .setResultsName('model')
-        )
-        field_name = (
-            p.OneOrMore(p.Suppress('.') + alpha_under)
-            .setParseAction(parse_field)
-            .setResultsName('field')
-        )
-        operation = (
-            p.Word(p.alphas).setResultsName('func_name')
+        field_name = p.OneOrMore(p.Suppress('.') + alpha_under).setParseAction(
+            parse_field
+        )('field')
+        func_call = (
+            p.Word(p.alphas)('func_name')
             + p.Suppress('(')
-            + field_name.setResultsName('func_field')
+            + field_name('func_field')
+            + p.Optional(p.Suppress(',') + p.delimitedList(value))('func_args')
             + p.Suppress(')')
-        ).setResultsName('operation')
-        field = field_name | operation
-        is_kw = p.Keyword('is')
-        negation = (
-            p.Optional(p.Keyword('not'))
-            .setParseAction(lambda t: bool(t))
-            .setResultsName('negation')
+        ).setParseAction(parse_func_call)('func_call')
+        field = field_name | func_call
+        is_kw = p.Suppress(p.Keyword('is'))
+        negation = p.Optional(p.Keyword('not')).setParseAction(
+            lambda t: bool(t)
+        )('negate')
+        negation_does = p.Optional(
+            p.Keyword("doesn't") | p.Keyword("does not")
+        ).setParseAction(lambda t: bool(t))('negate')
+        equality = G(field + p.Suppress('=') + value).setParseAction(
+            parse_equality()
         )
-        negation_does = (
-            p.Optional(p.Keyword("doesn't") | p.Keyword("does not"))
-            .setParseAction(lambda t: bool(t))
-            .setResultsName('negation')
+        inequality = G(field + p.Suppress('!=') + value).setParseAction(
+            parse_inequality
         )
-        equality = (field + p.Suppress('=') + value).setResultsName('=')
-        inequality = (field + p.Suppress('!=') + value).setResultsName('!=')
-        lt = (field + p.Suppress('<') + value).setResultsName('<')
-        lte = (field + p.Suppress('<=') + value).setResultsName('<=')
-        gt = (field + p.Suppress('>') + value).setResultsName('>')
-        gte = (field + p.Suppress('>=') + value).setResultsName('>=')
+        lt = G(field + p.Suppress('<') + value).setParseAction(
+            generic_suffix('lt')
+        )
+        lte = G(field + p.Suppress('<=') + value).setParseAction(
+            generic_suffix('lte')
+        )
+        gt = G(field + p.Suppress('>') + value).setParseAction(
+            generic_suffix('gt')
+        )
+        gte = G(field + p.Suppress('>=') + value).setParseAction(
+            generic_suffix('gte')
+        )
         null_or_none = p.Keyword('null') | p.Keyword('none')
-        null = (field + is_kw + negation + null_or_none).setResultsName('null')
-        empty = (field + is_kw + negation + p.Keyword('empty')).setResultsName(
-            'empty'
+        null = G(field + is_kw + negation + null_or_none).setParseAction(
+            parse_is_null()
         )
-        contains = (
+        empty = G(
+            field + is_kw + negation + p.Keyword('empty')
+        ).setParseAction(parse_is_empty())
+        contains = G(
             field
             + negation_does
-            + (p.Keyword('contain') | p.Keyword('contains'))
-            + string.setResultsName('value')
-        ).setResultsName('contains')
-        startswith = (
+            + p.Suppress(p.Keyword('contain') | p.Keyword('contains'))
+            + string('value')
+        ).setParseAction(parse_contains())
+        startswith = G(
             field
             + negation_does
-            + (p.Keyword('start with') | p.Keyword('starts with'))
-            + string.setResultsName('value')
-        ).setResultsName('startswith')
-        endswith = (
+            + p.Suppress(p.Keyword('start with') | p.Keyword('starts with'))
+            + string('value')
+        ).setParseAction(parse_startswith())
+        endswith = G(
             field
             + negation_does
-            + (p.Keyword('end with') | p.Keyword('ends with'))
-            + string.setResultsName('value')
-        ).setResultsName('endswith')
-        matches = (
+            + p.Suppress(p.Keyword('end with') | p.Keyword('ends with'))
+            + string('value')
+        ).setParseAction(parse_endswith())
+        matches = G(
             field
             + negation_does
-            + (p.Keyword('match') | p.Keyword('matches'))
-            + string.setResultsName('value')
-        ).setResultsName('matches')
-        between = (
+            + p.Suppress(p.Keyword('match') | p.Keyword('matches'))
+            + string('value')
+        ).setParseAction(parse_match())
+        between = G(
             field
             + negation
-            + p.Keyword('between')
-            + value.setResultsName('min')
-            + p.Keyword('and')
-            + value.setResultsName('max')
-        ).setResultsName('between')
+            + p.Suppress(p.Keyword('between'))
+            + value('min')
+            + p.Suppress(p.Keyword('and'))
+            + value('max')
+        ).setParseAction(parse_between())
+
         clause = (
-            (
-                equality
-                | inequality
-                | lte
-                | gte
-                | lt
-                | gt
-                | between
-                | null
-                | empty
-                | contains
-                | startswith
-                | endswith
-                | matches
-            )
-            .setParseAction(parse_clause)
-            .setResultsName('comparison')
+            equality
+            | inequality
+            | lte
+            | gte
+            | lt
+            | gt
+            | between
+            | null
+            | empty
+            | contains
+            | startswith
+            | endswith
+            | matches
         )
-        oper_not = p.Keyword('not')
-        oper_and = p.Keyword('and')
-        oper_or = p.Keyword('or')
-        filter = p.operatorPrecedence(
-            clause + comments,
-            [
-                (oper_not, 1, p.opAssoc.RIGHT),
-                (oper_or, 2, p.opAssoc.LEFT),
-                (p.Optional(oper_and, default='and'), 2, p.opAssoc.LEFT),
-            ],
-        ).setParseAction(parse_filter)
+
+        c_not = (p.Suppress(p.Keyword('not')), 1, p.opAssoc.RIGHT, parse_not)
+        c_or = (p.Suppress(p.Keyword('or')), 2, p.opAssoc.LEFT, parse_or)
+        c_and = (
+            p.Suppress(p.Optional(p.Keyword('and'), default=p.Keyword('and'))),
+            2,
+            p.opAssoc.LEFT,
+            parse_and,
+        )
+
+        filter = p.infixNotation(clause + comments, [c_not, c_or, c_and])
+
         alias = (
             p.Keyword('alias')
-            + alpha_under.setResultsName('name')
-            + p.Optional(p.Suppress('=') + field_name.setResultsName('field'))
+            + alpha_under('name')
+            + p.Optional(p.Suppress('=') + field_name('field'))
             + comments
         ).setParseAction(lambda t: (t['name'], t.get('field', t['name'])))
+
         stmt = (
             p.stringStart()
             + comments
             + model
-            + p.Optional(
-                (p.Suppress(p.Keyword('as')) + alpha_under)
-            ).setResultsName('model_name')
+            + p.Optional((p.Suppress(p.Keyword('as')) + alpha_under))(
+                'model_name'
+            )
             + comments
-            + p.Optional(filter).setResultsName('filter')
+            + p.Optional(filter)('filter')
             + comments
-            + p.ZeroOrMore(alias).setResultsName('aliases')
+            + p.ZeroOrMore(alias)('aliases')
             + comments
             + p.StringEnd()
         ).setParseAction(parse)
 
         return stmt.parseString(query)[0]
-
-
-def parse_query(query: str) -> ParseResult:
-    return QueryParser().parse_query(query)
