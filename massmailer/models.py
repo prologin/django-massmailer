@@ -3,7 +3,6 @@ import enum
 import jinja2
 import jinja2.meta
 import jinja2.runtime
-import jinja2.sandbox
 import operator
 import re
 import uuid
@@ -21,8 +20,9 @@ from django.utils.translation import ugettext_lazy as _
 from functools import reduce
 
 from massmailer.query_parser import QueryParser, ParseError
-from massmailer.utils.db import ConditionalSum, CaseMapping
 from massmailer.utils import filters as mfilters
+from massmailer.utils.db import ConditionalSum, CaseMapping
+from massmailer.utils.sandbox import SandboxedModelEnvironment
 
 TEMPLATE_OPTS = {
     'autoescape': False,
@@ -89,7 +89,7 @@ class Template(models.Model):
         return getattr(self, attr)
 
     def environment(self, item):
-        env = jinja2.sandbox.SandboxedEnvironment(**self.template_opts(item))
+        env = SandboxedModelEnvironment(**self.template_opts(item))
         env.filters['format_datetime'] = mfilters.format_datetime
         env.filters['format_date'] = mfilters.format_date
         env.filters['format_time'] = mfilters.format_time

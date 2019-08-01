@@ -34,6 +34,15 @@ def create_simple_baguette_template():
     )
 
 
+def create_altering_data_template():
+    return Template.objects.create(
+        name="I am the danger",
+        language="en-us",
+        subject="Test delete",
+        plain_body="{{ user.delete() }}",
+    )
+
+
 class TemplateTestCase(TestCase):
     def setUp(self):
         self.client = Client()
@@ -140,3 +149,12 @@ class TemplateTestCase(TestCase):
         )
 
         self.assertListEqual(result['subject']['context']['missing'], [])
+
+    def test_sandbox_rejects_alter_data(self):
+        t = create_altering_data_template()
+        result = t.full_preview(self.template_context)
+        self.assertIn(
+            '<bound method Model.delete of <User: zopieux>> '
+            'is not safely callable',
+            result['plain']['error']['msg'],
+        )
