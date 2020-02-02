@@ -9,6 +9,8 @@ import uuid
 
 from django.conf import settings
 from django.contrib.auth import get_user_model
+from django.contrib.contenttypes.fields import GenericForeignKey
+from django.contrib.contenttypes.models import ContentType
 from django.core import mail
 from django.core.exceptions import FieldDoesNotExist
 from django.urls import reverse
@@ -160,6 +162,7 @@ class Query(models.Model):
     name = models.CharField(max_length=144, verbose_name=_("Name"))
     description = models.TextField(blank=True, verbose_name=_("Description"))
     query = models.TextField(verbose_name=_("Query"))
+    is_only_mail = models.BooleanField(default=False)
     useful_with = models.ManyToManyField(
         Template,
         blank=True,
@@ -182,13 +185,24 @@ class Query(models.Model):
         )
 
     def get_results(self):
-        return self.execute(self.query)
+        return self.execute(self.query, self.is_only_mail)
 
     def parse(self):
         return QueryParser().parse_query(self.query)
 
     @staticmethod
-    def execute(query):
+    def execute(query, is_only_mail):
+        if is_only_mail:
+            result = QueryParser().parse_query(query)
+            qs = result.queryset
+            if 'mail' not in result.aliases:
+                raise ParseError(
+                    _(
+                        "If the query is only a list of mails, you must provide a `mail` alias."
+                    )
+                )
+            return result, qs
+
         User = get_user_model()
         user_label = User._meta.label
 
@@ -330,7 +344,9 @@ class Batch(models.Model):
         result, user_qs = self.query.get_results()
         queryset = result.queryset.order_by('pk')
 
-        if result.queryset.model is get_user_model():
+        if self.query.is_only_mail:
+            user_getter = lambda object: None
+        elif result.queryset.model is get_user_model():
             user_getter = lambda object: object
         else:
             user_getter = lambda object: get_attr_rec(
@@ -346,10 +362,15 @@ class Batch(models.Model):
             }
             context[result.model_name] = object
             user = user_getter(object)
+            if self.query.is_only_mail:
+                email = getattr(object, result.aliases['mail'])
+            else:
+                email = user.email
             yield BatchEmail(
                 batch=self,
                 user=user,
-                to=user.email,
+                mailed_object=object,
+                to=email,
                 subject=self.template.render(TemplateItem.subject, context),
                 body=self.template.render(TemplateItem.plain, context),
                 html_body=self.template.render(TemplateItem.html, context)
@@ -369,6 +390,12 @@ class BatchEmail(models.Model):
     user = models.ForeignKey(
         settings.AUTH_USER_MODEL, null=True, on_delete=models.SET_NULL
     )
+
+    content_type = models.ForeignKey(
+        ContentType, on_delete=models.CASCADE, null=True, blank=True
+    )
+    object_id = models.PositiveIntegerField(null=True, blank=True)
+    mailed_object = GenericForeignKey('content_type', 'object_id')
 
     to = models.EmailField(
         blank=False
@@ -403,6 +430,13 @@ class BatchEmail(models.Model):
         if self.user and hasattr(self.user, 'get_unsubscribe_url'):
             headers['List-Unsubscribe'] = '<{}>'.format(
                 self.user.get_unsubscribe_url()
+            )
+
+        if self.mailed_object and hasattr(
+            self.mailed_object, 'get_unsubscribe_url'
+        ):
+            headers['List-Unsubscribe'] = '<{}>'.format(
+                self.mailed_object.get_unsubscribe_url()
             )
 
         kwargs = {
