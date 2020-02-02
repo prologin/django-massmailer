@@ -157,6 +157,7 @@ $(function () {
     return editor;
   };
 
+  var $is_only_mail = $("#id_is_only_mail");
   var $query = $("#id_query");
   var $result_stats = $('#result-stats').hide();
   var $result_wrap = $('#result-wrap');
@@ -184,9 +185,10 @@ $(function () {
   var page = 1, count = 0;
 
   function preview() {
+    var is_only_mail = document.getElementById("id_is_only_mail").checked;
     var query = editor.getSession().getDocument().getValue();
     $page_buttons.prop('disabled', true);
-    $.post(PREVIEW_URL, {query: query, page: page - 1})
+    $.post(PREVIEW_URL, {is_only_mail: is_only_mail, query: query, page: page - 1})
       .done(function (data) {
         var invalid = !!data.error;
         $result_stats.toggle(!data.error);
@@ -231,6 +233,7 @@ $(function () {
       });
   }
 
+  $is_only_mail.on('change', preview);
   editor.getSession().getDocument().on('change', debounce(preview, 500));
 
   $page_previous.click(function (e) {

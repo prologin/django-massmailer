@@ -292,10 +292,13 @@ class QueryPreviewView(PermissionRequiredMixin, MailerAdminMixin, View):
 
     def post(self, request, *args, **kwargs):
         query = request.POST['query']
+        is_only_mail = request.POST['is_only_mail'] == "true"
         page = int(request.POST['page'])
         try:
             # run the query
-            result, user_qs = massmailer.models.Query.execute(query)
+            result, user_qs = massmailer.models.Query.execute(
+                query, is_only_mail
+            )
             qs = result.queryset
             count = qs.count()
             user_count = user_qs.count()
