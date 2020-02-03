@@ -431,12 +431,11 @@ class BatchEmail(models.Model):
             headers['List-Unsubscribe'] = '<{}>'.format(
                 self.user.get_unsubscribe_url()
             )
-
-        if self.mailed_object and hasattr(
+        elif self.mailed_object and hasattr(
             self.mailed_object, 'get_unsubscribe_url'
         ):
             headers['List-Unsubscribe'] = '<{}>'.format(
-                self.mailed_object.get_unsubscribe_url()
+                getattr(self.mailed_object, 'get_unsubscribe_url')
             )
 
         kwargs = {
