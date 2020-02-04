@@ -51,3 +51,25 @@ class JinjaEscapeExtension(Extension):
     def extendMarkdown(self, md):
         md.preprocessors.add('jinja-pre', Pre(self), '_begin')
         md.postprocessors.add('jinja-post', Post(self), '_end')
+
+
+def get_attr_rec(item, field):
+    '''
+    Same as getattr(item, field) but behaves recursivelly with the
+    field__subfield syntax.
+    '''
+    for key in field.split('__'):
+        item = getattr(item, key)
+
+    return item
+
+
+def get_field_rec(model, field):
+    '''
+    Select a field from an django model, behaves recursivelly with the
+    field__subfield syntax.
+    '''
+    for key in field.split('__'):
+        model = model._meta.get_field(key).related_model
+
+    return model

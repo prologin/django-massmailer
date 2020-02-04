@@ -20,7 +20,7 @@ from django.utils.translation import ugettext_lazy as _
 from functools import reduce
 
 from massmailer.query_parser import QueryParser, ParseError
-from massmailer.utils import filters as mfilters
+from massmailer.utils import get_attr_rec, get_field_rec, filters as mfilters
 from massmailer.utils.db import ConditionalSum, CaseMapping
 from massmailer.utils.sandbox import SandboxedModelEnvironment
 
@@ -208,7 +208,7 @@ class Query(models.Model):
                 )
             user_field = result.aliases['user']
             try:
-                if qs.model._meta.get_field(user_field).related_model != User:
+                if get_field_rec(qs.model, user_field) != User:
                     raise ParseError(
                         _("%(label)s.%(field)s is not %(model)s")
                         % {
@@ -333,7 +333,7 @@ class Batch(models.Model):
         if result.queryset.model is get_user_model():
             user_getter = lambda object: object
         else:
-            user_getter = lambda object: getattr(
+            user_getter = lambda object: get_attr_rec(
                 object, result.aliases['user']
             )
 
@@ -341,7 +341,7 @@ class Batch(models.Model):
 
         for object in queryset:
             context = {
-                alias: getattr(object, field)
+                alias: get_attr_rec(object, field)
                 for alias, field in result.aliases.items()
             }
             context[result.model_name] = object
