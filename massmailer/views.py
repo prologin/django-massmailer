@@ -38,7 +38,7 @@ import massmailer.forms
 import massmailer.models
 import massmailer.tasks
 from massmailer.query_parser import QueryParser
-from massmailer.utils import JinjaEscapeExtension
+from massmailer.utils import JinjaEscapeExtension, get_attr_rec
 
 
 class MailerAdminMixin(UserPassesTestMixin):
@@ -158,7 +158,7 @@ class TemplatePreviewView(PermissionRequiredMixin, MailerAdminMixin, View):
         try:
             object = qs[page]
             context = {
-                alias: getattr(object, field)
+                alias: get_attr_rec(object, field)
                 for alias, field in results.aliases.items()
             }
             context[results.model_name] = object
@@ -289,7 +289,7 @@ class QueryPreviewView(PermissionRequiredMixin, MailerAdminMixin, View):
                 obj = qs[page]
                 instance = {result.model_name: self.serialize(obj)}
                 for name, field in result.aliases.items():
-                    serialized = self.serialize(getattr(obj, field))
+                    serialized = self.serialize(get_attr_rec(obj, field))
                     if serialized:
                         instance[name] = serialized
 
