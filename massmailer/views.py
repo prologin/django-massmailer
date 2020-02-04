@@ -147,7 +147,7 @@ class TemplatePreviewView(PermissionRequiredMixin, MailerAdminMixin, View):
             template.html_body = html
 
         results, user_qs = query.get_results()
-        qs = results.queryset
+        qs = results.queryset.order_by('pk')
         count = qs.count()
         user_count = user_qs.count()
         data['query'] = {
@@ -281,7 +281,7 @@ class QueryPreviewView(PermissionRequiredMixin, MailerAdminMixin, View):
         try:
             # run the query
             result, user_qs = massmailer.models.Query.execute(query)
-            qs = result.queryset
+            qs = result.queryset.order_by('pk')
             count = qs.count()
             user_count = user_qs.count()
             instance = None
