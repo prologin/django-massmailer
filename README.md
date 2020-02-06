@@ -132,6 +132,28 @@ Greetings, {{ user.get_full_name().strip().title() }}!
 {% if user.is_staff %}With great power comes great responsibility.{% endif %}
 ```
 
+### Use your how base template
+
+If you want to use massmailer inside of your own template you can create a base
+template in `mysite/mysite/templates/massmailer/base.html`:
+
+```jinja
+{% extends "mysite/base.html" %}
+
+{# Just reuse my main base.html #}
+```
+
+Note that massmailer will try to load jQuery and bootstrap, which will raise
+issues if you also happen to use it. To avoid this you should load
+corresponding JS files inside a `massmailer_extra_script` block:
+
+```jinja
+{% block massmailer_extra_script %}
+  <script src="{% static 'path/to/jquery.min.js' %}"></script>
+  <script src="{% static 'path/to/bootstrap.min.js' %}"></script>
+{% endblock %}
+```
+
 #### Template filters
 
 In addition to the Jinja2 [builtin

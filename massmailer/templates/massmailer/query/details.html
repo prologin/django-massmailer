@@ -165,7 +165,7 @@ alias some_name = .some_field</pre>
 
 {% endblock %}
 
-{% block extra_script %}
+{% block massmailer_extra_script %}
   {{ block.super }}
   <script type="text/javascript">
     var PREVIEW_URL = '{% url 'massmailer:query:preview' %}';

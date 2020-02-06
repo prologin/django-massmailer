@@ -13,8 +13,7 @@
   {% breadcrumb_for 'massmailer:dashboard' %}Mailing{% endbreadcrumb_for %}
 {% endblock %}
 
-{% block extra_script %}
-  {{ block.super }}
+{% block massmailer_extra_script %}
   <script src="{% static 'massmailer/vendor/jquery.min.js' %}"></script>
   <script src="{% static 'massmailer/vendor/bootstrap.min.js' %}"></script>
 {% endblock %}
