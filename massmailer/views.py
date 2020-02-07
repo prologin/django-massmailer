@@ -132,6 +132,7 @@ class TemplatePreviewView(PermissionRequiredMixin, MailerAdminMixin, View):
         page = int(request.POST['page'])
 
         template = massmailer.models.Template()
+        template.is_mailing = request.POST['is_mailing']
         template.subject = request.POST['subject']
         template.plain_body = request.POST['plain']
         template.language = request.POST['language']
@@ -148,6 +149,15 @@ class TemplatePreviewView(PermissionRequiredMixin, MailerAdminMixin, View):
 
         results, user_qs = query.get_results()
         qs = results.queryset
+        if template.is_mailing == 'true' and not hasattr(
+            qs.model, 'get_unsubscribe_url'
+        ):
+            data['error'] = _(
+                _(
+                    'If this is a mailing the query object must have a get_unsubscribe_url attribute.'
+                )
+            )
+            return JsonResponse(data)
         count = qs.count()
         user_count = user_qs.count()
         data['query'] = {
@@ -163,6 +173,11 @@ class TemplatePreviewView(PermissionRequiredMixin, MailerAdminMixin, View):
             }
             context[results.model_name] = object
             data['render'] = template.full_preview(context)
+            data['render']['header'] = ''
+            if template.is_mailing == 'true':
+                data['render']['header'] = getattr(
+                    object, 'get_unsubscribe_url'
+                )
         except IndexError:
             data['render'] = ''
         return JsonResponse(data)
@@ -277,13 +292,10 @@ class QueryPreviewView(PermissionRequiredMixin, MailerAdminMixin, View):
 
     def post(self, request, *args, **kwargs):
         query = request.POST['query']
-        is_only_mail = request.POST['is_only_mail'] == "true"
         page = int(request.POST['page'])
         try:
             # run the query
-            result, user_qs = massmailer.models.Query.execute(
-                query, is_only_mail
-            )
+            result, user_qs = massmailer.models.Query.execute(query)
             qs = result.queryset
             count = qs.count()
             user_count = user_qs.count()

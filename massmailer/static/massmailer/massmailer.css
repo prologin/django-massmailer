@@ -10,7 +10,7 @@
   border-top: none;
 }
 
-#preview-plain .preview-subject, #preview-plain .preview-content {
+#preview-plain .preview-subject, #preview-plain .preview-header, #preview-plain .preview-content {
   color: inherit;
   border: none;
   background: transparent;

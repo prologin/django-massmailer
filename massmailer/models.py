@@ -60,6 +60,13 @@ class TemplateItem(enum.Enum):
 class Template(models.Model):
     name = models.CharField(max_length=144, verbose_name=_("Name"))
     description = models.TextField(blank=True, verbose_name=_("Description"))
+    is_mailing = models.BooleanField(
+        default=False,
+        verbose_name=_("This is a ‘marketing’ email"),
+        help_text=_(
+            "Adds an Unsubscribe header and makes sure the email contains the unsubscribe URL."
+        ),
+    )
     subject = models.TextField(verbose_name=_("Subject template"))
     plain_body = models.TextField(verbose_name=_("Plaintext body template"))
     html_body = models.TextField(
@@ -162,7 +169,6 @@ class Query(models.Model):
     name = models.CharField(max_length=144, verbose_name=_("Name"))
     description = models.TextField(blank=True, verbose_name=_("Description"))
     query = models.TextField(verbose_name=_("Query"))
-    is_only_mail = models.BooleanField(default=False)
     useful_with = models.ManyToManyField(
         Template,
         blank=True,
@@ -185,63 +191,19 @@ class Query(models.Model):
         )
 
     def get_results(self):
-        return self.execute(self.query, self.is_only_mail)
+        return self.execute(self.query)
 
     def parse(self):
         return QueryParser().parse_query(self.query)
 
     @staticmethod
-    def execute(query, is_only_mail):
-        if is_only_mail:
-            result = QueryParser().parse_query(query)
-            qs = result.queryset
-            if 'mail' not in result.aliases:
-                raise ParseError(
-                    _(
-                        "If the query is only a list of mails, you must provide a `mail` alias."
-                    )
-                )
-            return result, qs
-
-        User = get_user_model()
-        user_label = User._meta.label
-
+    def execute(query):
         result = QueryParser().parse_query(query)
         qs = result.queryset
-        qs_label = qs.model._meta.label
+        if 'email' not in result.aliases:
+            raise ParseError(_("You must provide a `email` alias."))
 
-        user_qs = qs
-        # if queryset is not a User queryset, require a "user" alias
-        if user_qs.model != User:
-            if 'user' not in result.aliases:
-                raise ParseError(
-                    _(
-                        "The root model is not %(model)s. You must provide a `user` alias."
-                    )
-                    % {'model': user_label}
-                )
-            user_field = result.aliases['user']
-            try:
-                if get_field_rec(qs.model, user_field) != User:
-                    raise ParseError(
-                        _("%(label)s.%(field)s is not %(model)s")
-                        % {
-                            'label': qs_label,
-                            'field': user_field,
-                            'model': user_label,
-                        }
-                    )
-            except FieldDoesNotExist:
-                raise ParseError(
-                    _(
-                        "%(label)s has no field `%(field)s`"
-                        % {'label': qs_label, 'field': user_field}
-                    )
-                )
-            user_pks = set(qs.values_list(user_field, flat=True))
-            user_qs = User._default_manager.filter(pk__in=user_pks)
-
-        return result, user_qs
+        return result, qs
 
 
 class BatchManager(models.Manager):
@@ -344,15 +306,6 @@ class Batch(models.Model):
         result, user_qs = self.query.get_results()
         queryset = result.queryset.order_by('pk')
 
-        if self.query.is_only_mail:
-            user_getter = lambda object: None
-        elif result.queryset.model is get_user_model():
-            user_getter = lambda object: object
-        else:
-            user_getter = lambda object: get_attr_rec(
-                object, result.aliases['user']
-            )
-
         html_enabled = self.template.html_enabled
 
         for object in queryset:
@@ -361,16 +314,18 @@ class Batch(models.Model):
                 for alias, field in result.aliases.items()
             }
             context[result.model_name] = object
-            user = user_getter(object)
-            if self.query.is_only_mail:
-                email = getattr(object, result.aliases['mail'])
-            else:
-                email = user.email
+            email = getattr(object, result.aliases['email'])
+
+            unsub_url = ""
+            if hasattr(object, 'get_unsubscribe_url'):
+                unsub_url = '<{}>'.format(
+                    getattr(object, 'get_unsubscribe_url')
+                )
+
             yield BatchEmail(
                 batch=self,
-                user=user,
-                mailed_object=object,
                 to=email,
+                unsubscribe_url=unsub_url,
                 subject=self.template.render(TemplateItem.subject, context),
                 body=self.template.render(TemplateItem.plain, context),
                 html_body=self.template.render(TemplateItem.html, context)
@@ -387,19 +342,10 @@ class BatchEmail(models.Model):
     batch = models.ForeignKey(
         Batch, related_name='emails', on_delete=models.CASCADE
     )
-    user = models.ForeignKey(
-        settings.AUTH_USER_MODEL, null=True, on_delete=models.SET_NULL
-    )
-
-    content_type = models.ForeignKey(
-        ContentType, on_delete=models.CASCADE, null=True, blank=True
-    )
-    object_id = models.PositiveIntegerField(null=True, blank=True)
-    mailed_object = GenericForeignKey('content_type', 'object_id')
-
     to = models.EmailField(
         blank=False
     )  # in case user is deleted or changes email
+    unsubscribe_url = models.TextField(blank=True)
     subject = models.TextField(blank=True)
     body = models.TextField(blank=True)
     html_body = models.TextField(blank=True, default="")
@@ -427,16 +373,8 @@ class BatchEmail(models.Model):
         assert self.body
         # add a custom header to resolve the mail ID from bounces/complaints
         headers = {'X-MID': self.id}
-        if self.user and hasattr(self.user, 'get_unsubscribe_url'):
-            headers['List-Unsubscribe'] = '<{}>'.format(
-                self.user.get_unsubscribe_url()
-            )
-        elif self.mailed_object and hasattr(
-            self.mailed_object, 'get_unsubscribe_url'
-        ):
-            headers['List-Unsubscribe'] = '<{}>'.format(
-                getattr(self.mailed_object, 'get_unsubscribe_url')
-            )
+        if self.unsubscribe_url:
+            headers['List-Unsubscribe'] = self.unsubscribe_url
 
         if self.mailed_object and hasattr(
             self.mailed_object, 'get_unsubscribe_url'

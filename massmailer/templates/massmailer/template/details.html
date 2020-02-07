@@ -65,6 +65,7 @@
 
     <div class="row">
       <div class="col-md-6">
+        {{ form.is_mailing|as_crispy_field }}
         {{ form.subject|as_crispy_field }}
         <p id="preview-subject-error" class="text-danger"></p>
         {{ form.plain_body|as_crispy_field }}
@@ -110,12 +111,16 @@
               <div class="preview-container">
                 {% spaceless %}<div class="preview-subject"><div class="wrap-ruler"></div><div></div></div>{% endspaceless %}
                 <hr>
+                {% spaceless %}<div class="preview-header"><div class="wrap-ruler"></div><div></div></div>{% endspaceless %}
+                <hr>
                 {% spaceless %}<div class="preview-content"><div class="wrap-ruler"></div><div></div></div>{% endspaceless %}
               </div>
             </div>
             <div role="tabpanel" class="tab-pane" id="preview-html">
               <div class="preview-container">
                 <div class="preview-subject"></div>
+                <hr>
+                <div class="preview-header"></div>
                 <hr>
                 <div class="preview-content"></div>
               </div>

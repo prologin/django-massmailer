@@ -34,6 +34,7 @@ class TemplateForm(forms.ModelForm):
         fields = [
             'name',
             'description',
+            'is_mailing',
             'subject',
             'plain_body',
             'html_body',
@@ -83,13 +84,7 @@ class TemplateForm(forms.ModelForm):
 class QueryForm(forms.ModelForm):
     class Meta:
         model = massmailer.models.Query
-        fields = [
-            'name',
-            'description',
-            'useful_with',
-            'is_only_mail',
-            'query',
-        ]
+        fields = ['name', 'description', 'useful_with', 'query']
         widgets = {'description': forms.Textarea(attrs={'rows': 2})}
 
 
@@ -116,6 +111,21 @@ class CreateBatchForm(forms.ModelForm):
     def foolproof_enabled(self):
         return not settings.DEBUG
 
+    def clean(self):
+        query = self.cleaned_data['query']
+        result, qs = massmailer.models.Query.execute(query.query)
+        template = self.cleaned_data['template']
+        if (
+            len(qs) > 0
+            and template.is_mailing
+            and not hasattr(qs[0], 'get_unsubscribe_url')
+        ):
+            raise forms.ValidationError(
+                _(
+                    'The template is a mailing but the query has no get_unsubscribe_url atribute.'
+                )
+            )
+
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.data = self.data.copy()
@@ -123,13 +133,15 @@ class CreateBatchForm(forms.ModelForm):
         submit = _("Send")
         submit_cls = "btn-primary"
 
-        if 'query' in self.data and 'template' in self.data:
+        if (
+            self.is_valid()
+            and 'query' in self.data
+            and 'template' in self.data
+        ):
             # once the form is submitted once, add the foolproof test (we now know the user count)
             query = self.fields['query'].queryset.get(pk=self.data['query'])
 
-            result, user_qs = massmailer.models.Query.execute(
-                query.query, query.is_only_mail
-            )
+            result, user_qs = massmailer.models.Query.execute(query.query)
             count = len(user_qs)
             submit = _("Actually send to %(n)s people right now") % {
                 'n': count
