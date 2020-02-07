@@ -1,11 +1,12 @@
 from django.views.generic import RedirectView
 
 from demoapp.models import SubscriberEmail
+from django.shortcuts import redirect
 
 
 class NewsletterUnsubscribeView(RedirectView):
     def get_redirect_url(self, *args, **kwargs):
-        return reverse('')
+        return redirect('/')
 
     def get(self, request, *args, **kwargs):
         try:
@@ -13,22 +14,9 @@ class NewsletterUnsubscribeView(RedirectView):
 
             if subscriber.unsubscribe_token == kwargs['token']:
                 subscriber.delete()
-                messages.add_message(
-                    request,
-                    messages.SUCCESS,
-                    _('Successfully unsubscribed from newsletter.'),
-                )
+                print('Successfully unsubscribed from newsletter.')
             else:
-                messages.add_message(
-                    request,
-                    messages.ERROR,
-                    _('Failed to unsubscribe: wrong token.'),
-                )
+                print('Failed to unsubscribe: wrong token.')
         except SubscriberEmail.DoesNotExist:
-            messages.add_message(
-                request,
-                messages.ERROR,
-                _('Failed to unsubscribe: unregistered address'),
-            )
-
-        return super().get(request, *args, **kwargs)
+            print('Failed to unsubscribe: unregistered address')
+        return redirect('/')

@@ -7,13 +7,12 @@ from django.urls import reverse
 
 class SubscriberEmail(models.Model):
     email = models.EmailField()
-    date = models.DateTimeField(auto_now_add=True)
 
     @property
     def unsubscribe_token(self):
-        subscriber_id = str(self.id).encode()
         secret = settings.SECRET_KEY.encode()
-        return hashlib.sha256(subscriber_id + secret).hexdigest()[:32]
+        unique = f"{self.id}{settings.SECRET_KEY}"
+        return hashlib.sha256(unique.encode()).hexdigest()[:32]
 
     @property
     def get_unsubscribe_url(self):
