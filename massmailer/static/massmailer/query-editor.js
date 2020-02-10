@@ -231,6 +231,7 @@ $(function () {
       });
   }
 
+  editor.getSession().getDocument().on('change', debounce(preview, 500));
 
   $page_previous.click(function (e) {
     e.preventDefault();
