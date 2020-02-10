@@ -84,13 +84,7 @@ class TemplateForm(forms.ModelForm):
 class QueryForm(forms.ModelForm):
     class Meta:
         model = massmailer.models.Query
-        fields = [
-            'name',
-            'description',
-            'useful_with',
-            'is_only_mail',
-            'query',
-        ]
+        fields = ['name', 'description', 'useful_with', 'query']
         widgets = {'description': forms.Textarea(attrs={'rows': 2})}
 
 
@@ -147,9 +141,7 @@ class CreateBatchForm(forms.ModelForm):
             # once the form is submitted once, add the foolproof test (we now know the user count)
             query = self.fields['query'].queryset.get(pk=self.data['query'])
 
-            result, user_qs = massmailer.models.Query.execute(
-                query.query, query.is_only_mail
-            )
+            result, user_qs = massmailer.models.Query.execute(query.query)
             count = len(user_qs)
             submit = _("Actually send to %(n)s people right now") % {
                 'n': count

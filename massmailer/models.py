@@ -167,7 +167,6 @@ class Query(models.Model):
     name = models.CharField(max_length=144, verbose_name=_("Name"))
     description = models.TextField(blank=True, verbose_name=_("Description"))
     query = models.TextField(verbose_name=_("Query"))
-    is_only_mail = models.BooleanField(default=False)
     useful_with = models.ManyToManyField(
         Template,
         blank=True,
@@ -190,7 +189,7 @@ class Query(models.Model):
         )
 
     def get_results(self):
-        return self.execute(self.query, self.is_only_mail)
+        return self.execute(self.query)
 
     def parse(self):
         return QueryParser().parse_query(self.query)
@@ -374,20 +373,6 @@ class BatchEmail(models.Model):
         headers = {'X-MID': self.id}
         if self.unsubscribe_url:
             headers['List-Unsubscribe'] = self.unsubscribe_url
-
-        if self.mailed_object and hasattr(
-            self.mailed_object, 'get_unsubscribe_url'
-        ):
-            headers['List-Unsubscribe'] = '<{}>'.format(
-                self.mailed_object.get_unsubscribe_url()
-            )
-
-        if self.mailed_object and hasattr(
-            self.mailed_object, 'get_unsubscribe_url'
-        ):
-            headers['List-Unsubscribe'] = '<{}>'.format(
-                self.mailed_object.get_unsubscribe_url()
-            )
 
         kwargs = {
             'to': [self.to],
