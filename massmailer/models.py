@@ -9,8 +9,6 @@ import uuid
 
 from django.conf import settings
 from django.contrib.auth import get_user_model
-from django.contrib.contenttypes.fields import GenericForeignKey
-from django.contrib.contenttypes.models import ContentType
 from django.core import mail
 from django.core.exceptions import FieldDoesNotExist
 from django.urls import reverse
