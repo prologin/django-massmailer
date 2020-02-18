@@ -128,7 +128,7 @@ class TemplatePreviewView(PermissionRequiredMixin, MailerAdminMixin, View):
 
         html_enabled = request.POST.get('html_enabled') == 'true'
 
-        query = massmailer.models.Query.objects.get(pk=(request.POST['query']))
+        query = massmailer.models.Query.objects.get(pk=request.POST['query'])
         page = int(request.POST['page'])
 
         template = massmailer.models.Template()
@@ -154,7 +154,7 @@ class TemplatePreviewView(PermissionRequiredMixin, MailerAdminMixin, View):
         ):
             data['error'] = _(
                 _(
-                    'If this is a mailing the query object must have a get_unsubscribe_url attribute.'
+                    'If this is a mailing the query model must have a get_unsubscribe_url method.'
                 )
             )
             return JsonResponse(data)
@@ -175,7 +175,7 @@ class TemplatePreviewView(PermissionRequiredMixin, MailerAdminMixin, View):
             data['render'] = template.full_preview(context)
             data['render']['header'] = ''
             if template.is_mailing == 'true':
-                data['render']['header'] = getattr(
+                data['render']['header'] = "List-Unsubscribe: " + getattr(
                     object, 'get_unsubscribe_url'
                 )
         except IndexError:

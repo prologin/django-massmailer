@@ -8,7 +8,6 @@ import re
 import uuid
 
 from django.conf import settings
-from django.contrib.auth import get_user_model
 from django.core import mail
 from django.core.exceptions import FieldDoesNotExist
 from django.urls import reverse
@@ -199,8 +198,7 @@ class Query(models.Model):
         result = QueryParser().parse_query(query)
         qs = result.queryset
         if 'email' not in result.aliases:
-            raise ParseError(_("You must provide a `email` alias."))
-
+            raise ParseError(_("The query must declare a `email` alias."))
         return result, qs
 
 
@@ -301,7 +299,7 @@ class Batch(models.Model):
         )
 
     def build_emails(self):
-        result, user_qs = self.query.get_results()
+        result, qs = self.query.get_results()
         queryset = result.queryset.order_by('pk')
 
         html_enabled = self.template.html_enabled
@@ -340,9 +338,7 @@ class BatchEmail(models.Model):
     batch = models.ForeignKey(
         Batch, related_name='emails', on_delete=models.CASCADE
     )
-    to = models.EmailField(
-        blank=False
-    )  # in case user is deleted or changes email
+    to = models.EmailField(blank=False)
     unsubscribe_url = models.TextField(blank=True)
     subject = models.TextField(blank=True)
     body = models.TextField(blank=True)

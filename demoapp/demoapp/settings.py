@@ -2,6 +2,7 @@ import os
 
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 SECRET_KEY = 'CHANGEME-DEMO'
+SITE_BASE_URL = 'http://localhost:8015'
 
 DEBUG = True
 

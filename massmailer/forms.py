@@ -111,21 +111,6 @@ class CreateBatchForm(forms.ModelForm):
     def foolproof_enabled(self):
         return not settings.DEBUG
 
-    def clean(self):
-        query = self.cleaned_data['query']
-        result, qs = massmailer.models.Query.execute(query.query)
-        template = self.cleaned_data['template']
-        if (
-            len(qs) > 0
-            and template.is_mailing
-            and not hasattr(qs[0], 'get_unsubscribe_url')
-        ):
-            raise forms.ValidationError(
-                _(
-                    'The template is a mailing but the query has no get_unsubscribe_url atribute.'
-                )
-            )
-
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.data = self.data.copy()
@@ -185,3 +170,20 @@ class CreateBatchForm(forms.ModelForm):
                 css_class="{} btn-block".format(submit_cls),
             )
         )
+
+    def clean(self):
+        query = self.cleaned_data['query']
+        result, qs = massmailer.models.Query.execute(query.query)
+        template = self.cleaned_data['template']
+        if len(qs) == 0:
+            raise forms.ValidationError(_('The queryset must be non empty.'))
+        if (
+            len(qs) > 0
+            and template.is_mailing
+            and not hasattr(qs[0], 'get_unsubscribe_url')
+        ):
+            raise forms.ValidationError(
+                _(
+                    'The template is a mailing but the query model has no get_unsubscribe_url method.'
+                )
+            )

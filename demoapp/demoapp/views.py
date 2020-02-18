@@ -6,7 +6,7 @@ from django.shortcuts import redirect
 
 class NewsletterUnsubscribeView(RedirectView):
     def get_redirect_url(self, *args, **kwargs):
-        return redirect('/')
+        return '/'
 
     def get(self, request, *args, **kwargs):
         try:
@@ -19,4 +19,4 @@ class NewsletterUnsubscribeView(RedirectView):
                 print('Failed to unsubscribe: wrong token.')
         except SubscriberEmail.DoesNotExist:
             print('Failed to unsubscribe: unregistered address')
-        return redirect('/')
+        return super().get(request, *args, **kwargs)

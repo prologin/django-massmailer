@@ -16,9 +16,12 @@ class SubscriberEmail(models.Model):
 
     @property
     def get_unsubscribe_url(self):
-        return reverse(
-            'news_unsubscribe',
-            kwargs={'email': self.email, 'token': self.unsubscribe_token},
+        return '{}{}'.format(
+            settings.SITE_BASE_URL,
+            reverse(
+                'news_unsubscribe',
+                kwargs={'email': self.email, 'token': self.unsubscribe_token},
+            ),
         )
 
     def __str__(self):
