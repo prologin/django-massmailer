@@ -313,7 +313,9 @@ class Batch(models.Model):
             email = getattr(object, result.aliases['email'])
 
             unsub_url = ""
-            if hasattr(object, 'get_unsubscribe_url'):
+            if self.template.is_mailing and hasattr(
+                object, 'get_unsubscribe_url'
+            ):
                 unsub_url = '<{}>'.format(
                     getattr(object, 'get_unsubscribe_url')
                 )
