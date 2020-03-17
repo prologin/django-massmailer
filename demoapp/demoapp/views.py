@@ -5,8 +5,7 @@ from django.shortcuts import redirect
 
 
 class NewsletterUnsubscribeView(RedirectView):
-    def get_redirect_url(self, *args, **kwargs):
-        return '/'
+    redirect_url = '/'
 
     def get(self, request, *args, **kwargs):
         try:

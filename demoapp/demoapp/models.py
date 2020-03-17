@@ -10,7 +10,6 @@ class SubscriberEmail(models.Model):
 
     @property
     def unsubscribe_token(self):
-        secret = settings.SECRET_KEY.encode()
         unique = f"{self.id}{settings.SECRET_KEY}"
         return hashlib.sha256(unique.encode()).hexdigest()[:32]
 

@@ -312,18 +312,18 @@ class Batch(models.Model):
             context[result.model_name] = object
             email = getattr(object, result.aliases['email'])
 
-            unsub_url = ""
+            unsubscribe_url = ""
             if self.template.is_mailing and hasattr(
                 object, 'get_unsubscribe_url'
             ):
-                unsub_url = '<{}>'.format(
+                unsubscribe_url = '<{}>'.format(
                     getattr(object, 'get_unsubscribe_url')
                 )
 
             yield BatchEmail(
                 batch=self,
                 to=email,
-                unsubscribe_url=unsub_url,
+                unsubscribe_url=unsubscribe_url,
                 subject=self.template.render(TemplateItem.subject, context),
                 body=self.template.render(TemplateItem.plain, context),
                 html_body=self.template.render(TemplateItem.html, context)
