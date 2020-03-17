@@ -197,8 +197,16 @@ class Query(models.Model):
     def execute(query):
         result = QueryParser().parse_query(query)
         qs = result.queryset
-        if 'email' not in result.aliases:
-            raise ParseError(_("The query must declare a `email` alias."))
+        if len(qs) <= 0:
+            raise ParseError(_("The query must be non empty."))
+        if 'email' not in result.aliases and hasattr(qs[0], 'email'):
+            result.aliases['email'] = 'email'
+        if 'email' not in result.aliases and not hasattr(qs[0], 'email'):
+            raise ParseError(
+                _(
+                    "The query must have an email field or declare an `email` alias."
+                )
+            )
         return result, qs
 
 
