@@ -8,6 +8,7 @@ import re
 import uuid
 
 from django.conf import settings
+from django.contrib.auth import get_user_model
 from django.core import mail
 from django.core.exceptions import FieldDoesNotExist
 from django.urls import reverse
@@ -199,15 +200,40 @@ class Query(models.Model):
         qs = result.queryset
         if len(qs) <= 0:
             raise ParseError(_("The query must be non empty."))
-        if 'email' not in result.aliases and hasattr(qs[0], 'email'):
+
+        user_qs = qs
+        User = get_user_model()
+        if user_qs.model != User and 'user' in result.aliases:
+            user_field = result.aliases['user']
+            try:
+                if get_field_rec(qs.model, user_field) != User:
+                    raise ParseError(
+                        _("%(label)s.%(field)s is not %(model)s")
+                        % {
+                            'label': qs_label,
+                            'field': user_field,
+                            'model': user_label,
+                        }
+                    )
+            except FieldDoesNotExist:
+                raise ParseError(
+                    _(
+                        "%(label)s has no field `%(field)s`"
+                        % {'label': qs_label, 'field': user_field}
+                    )
+                )
+            user_pks = set(qs.values_list(user_field, flat=True))
+            user_qs = User._default_manager.filter(pk__in=user_pks)
+
+        if 'email' not in result.aliases and hasattr(user_qs[0], 'email'):
             result.aliases['email'] = 'email'
-        if 'email' not in result.aliases and not hasattr(qs[0], 'email'):
+        if 'email' not in result.aliases and not hasattr(user_qs[0], 'email'):
             raise ParseError(
                 _(
                     "The query must have an email field or declare an `email` alias."
                 )
             )
-        return result, qs
+        return result, user_qs
 
 
 class BatchManager(models.Manager):
