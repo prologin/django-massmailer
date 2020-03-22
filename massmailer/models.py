@@ -58,7 +58,7 @@ class TemplateItem(enum.Enum):
 class Template(models.Model):
     name = models.CharField(max_length=144, verbose_name=_("Name"))
     description = models.TextField(blank=True, verbose_name=_("Description"))
-    is_mailing = models.BooleanField(
+    is_marketing = models.BooleanField(
         default=False,
         verbose_name=_("This is a ‘marketing’ email"),
         help_text=_(
@@ -347,7 +347,7 @@ class Batch(models.Model):
             email = getattr(object, result.aliases['email'])
 
             unsubscribe_url = ""
-            if self.template.is_mailing and hasattr(
+            if self.template.is_marketing and hasattr(
                 object, 'get_unsubscribe_url'
             ):
                 unsubscribe_url = '<{}>'.format(

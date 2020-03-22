@@ -16,7 +16,7 @@ class Migration(migrations.Migration):
         ),
         migrations.AddField(
             model_name='template',
-            name='is_mailing',
+            name='is_marketing',
             field=models.BooleanField(
                 default=False,
                 help_text='Adds an Unsubscribe header and makes sure the email contains the unsubscribe URL.',

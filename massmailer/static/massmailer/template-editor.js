@@ -27,7 +27,7 @@
     var $html_enabled = $('#id_html_enabled');
     var $wrap_columns = $('#id_wrap_columns');
     var query_id, page = 0, count = 0;
-    var $is_mailing = $('#id_is_mailing');
+    var $is_marketing = $('#id_is_marketing');
 
     $("#id_useful_queries").select2().on('select2:select', function (e) {
       query_id = e.params.data.id;
@@ -84,7 +84,7 @@
         query: query_id,
         page: page,
         language: $language.val(),
-        is_mailing: $is_mailing.prop('checked'),
+        is_marketing: $is_marketing.prop('checked'),
         subject: subject_editor.getSession().getDocument().getValue(),
         plain: plain_editor.getSession().getDocument().getValue(),
         html: html_editor.getSession().getDocument().getValue(),

@@ -34,7 +34,7 @@ class TemplateForm(forms.ModelForm):
         fields = [
             'name',
             'description',
-            'is_mailing',
+            'is_marketing',
             'subject',
             'plain_body',
             'html_body',
@@ -179,7 +179,7 @@ class CreateBatchForm(forms.ModelForm):
             raise forms.ValidationError(_('The queryset must be non empty.'))
         if (
             len(qs) > 0
-            and template.is_mailing
+            and template.is_marketing
             and not hasattr(qs[0], 'get_unsubscribe_url')
         ):
             raise forms.ValidationError(
