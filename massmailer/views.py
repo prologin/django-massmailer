@@ -153,9 +153,7 @@ class TemplatePreviewView(PermissionRequiredMixin, MailerAdminMixin, View):
             qs.model, 'get_unsubscribe_url'
         ):
             data['error'] = _(
-                _(
-                    'If this is a mailing the query model must have a get_unsubscribe_url method.'
-                )
+                'If this is a mailing the query model must have a get_unsubscribe_url method.'
             )
             return JsonResponse(data)
         count = qs.count()
