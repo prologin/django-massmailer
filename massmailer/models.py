@@ -58,6 +58,13 @@ class TemplateItem(enum.Enum):
 class Template(models.Model):
     name = models.CharField(max_length=144, verbose_name=_("Name"))
     description = models.TextField(blank=True, verbose_name=_("Description"))
+    is_marketing = models.BooleanField(
+        default=False,
+        verbose_name=_("This is a ‘marketing’ email"),
+        help_text=_(
+            "Adds an Unsubscribe header and makes sure the email contains the unsubscribe URL."
+        ),
+    )
     subject = models.TextField(verbose_name=_("Subject template"))
     plain_body = models.TextField(verbose_name=_("Plaintext body template"))
     html_body = models.TextField(
@@ -189,23 +196,14 @@ class Query(models.Model):
 
     @staticmethod
     def execute(query):
-        User = get_user_model()
-        user_label = User._meta.label
-
         result = QueryParser().parse_query(query)
         qs = result.queryset
-        qs_label = qs.model._meta.label
+        if len(qs) <= 0:
+            raise ParseError(_("The query must be non empty."))
 
         user_qs = qs
-        # if queryset is not a User queryset, require a "user" alias
-        if user_qs.model != User:
-            if 'user' not in result.aliases:
-                raise ParseError(
-                    _(
-                        "The root model is not %(model)s. You must provide a `user` alias."
-                    )
-                    % {'model': user_label}
-                )
+        User = get_user_model()
+        if user_qs.model != User and 'user' in result.aliases:
             user_field = result.aliases['user']
             try:
                 if get_field_rec(qs.model, user_field) != User:
@@ -227,6 +225,14 @@ class Query(models.Model):
             user_pks = set(qs.values_list(user_field, flat=True))
             user_qs = User._default_manager.filter(pk__in=user_pks)
 
+        if 'email' not in result.aliases and hasattr(user_qs[0], 'email'):
+            result.aliases['email'] = 'email'
+        if 'email' not in result.aliases and not hasattr(user_qs[0], 'email'):
+            raise ParseError(
+                _(
+                    "The query must have an email field or declare an `email` alias."
+                )
+            )
         return result, user_qs
 
 
@@ -327,15 +333,8 @@ class Batch(models.Model):
         )
 
     def build_emails(self):
-        result, user_qs = self.query.get_results()
+        result, qs = self.query.get_results()
         queryset = result.queryset.order_by('pk')
-
-        if result.queryset.model is get_user_model():
-            user_getter = lambda object: object
-        else:
-            user_getter = lambda object: get_attr_rec(
-                object, result.aliases['user']
-            )
 
         html_enabled = self.template.html_enabled
 
@@ -345,11 +344,20 @@ class Batch(models.Model):
                 for alias, field in result.aliases.items()
             }
             context[result.model_name] = object
-            user = user_getter(object)
+            email = getattr(object, result.aliases['email'])
+
+            unsubscribe_url = ""
+            if self.template.is_marketing and hasattr(
+                object, 'get_unsubscribe_url'
+            ):
+                unsubscribe_url = '<{}>'.format(
+                    getattr(object, 'get_unsubscribe_url')
+                )
+
             yield BatchEmail(
                 batch=self,
-                user=user,
-                to=user.email,
+                to=email,
+                unsubscribe_url=unsubscribe_url,
                 subject=self.template.render(TemplateItem.subject, context),
                 body=self.template.render(TemplateItem.plain, context),
                 html_body=self.template.render(TemplateItem.html, context)
@@ -366,13 +374,8 @@ class BatchEmail(models.Model):
     batch = models.ForeignKey(
         Batch, related_name='emails', on_delete=models.CASCADE
     )
-    user = models.ForeignKey(
-        settings.AUTH_USER_MODEL, null=True, on_delete=models.SET_NULL
-    )
-
-    to = models.EmailField(
-        blank=False
-    )  # in case user is deleted or changes email
+    to = models.EmailField(blank=False)
+    unsubscribe_url = models.TextField(blank=True)
     subject = models.TextField(blank=True)
     body = models.TextField(blank=True)
     html_body = models.TextField(blank=True, default="")
@@ -400,10 +403,8 @@ class BatchEmail(models.Model):
         assert self.body
         # add a custom header to resolve the mail ID from bounces/complaints
         headers = {'X-MID': self.id}
-        if self.user and hasattr(self.user, 'get_unsubscribe_url'):
-            headers['List-Unsubscribe'] = '<{}>'.format(
-                self.user.get_unsubscribe_url()
-            )
+        if self.unsubscribe_url:
+            headers['List-Unsubscribe'] = self.unsubscribe_url
 
         kwargs = {
             'to': [self.to],

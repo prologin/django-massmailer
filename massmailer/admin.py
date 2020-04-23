@@ -17,7 +17,7 @@ class QueryAdmin(VersionAdmin):
 
 class BatchEmailInline(admin.TabularInline):
     model = massmailer.models.BatchEmail
-    fields = readonly_fields = ['id', 'user', 'to', 'state_display']
+    fields = readonly_fields = ['id', 'to', 'state_display']
     extra = max_num = 0
     can_delete = False
 

@@ -27,6 +27,7 @@
     var $html_enabled = $('#id_html_enabled');
     var $wrap_columns = $('#id_wrap_columns');
     var query_id, page = 0, count = 0;
+    var $is_marketing = $('#id_is_marketing');
 
     $("#id_useful_queries").select2().on('select2:select', function (e) {
       query_id = e.params.data.id;
@@ -83,6 +84,7 @@
         query: query_id,
         page: page,
         language: $language.val(),
+        is_marketing: $is_marketing.prop('checked'),
         subject: subject_editor.getSession().getDocument().getValue(),
         plain: plain_editor.getSession().getDocument().getValue(),
         html: html_editor.getSession().getDocument().getValue(),
@@ -92,6 +94,7 @@
             $('#preview-error').text(data.error);
             return;
           }
+          $('#preview-error').text('');
           count = data.query.count;
           page = data.query.page;
           $result_count.text(count);
@@ -104,6 +107,7 @@
           $result_page.val(page + 1).attr('max', count);
           $('#preview-subject-error').text(data.render.subject.error ? data.render.subject.error.msg : '');
           $('#preview-plain .preview-subject > div:last-child, #preview-html .preview-subject').text(data.render.subject.content);
+          $('#preview-plain .preview-header > div:last-child, #preview-html .preview-header').text(data.render.header);
           $('#preview-plain .preview-content > div:last-child').text(data.render.plain.content);
           $('#preview-plain-error').text(data.render.plain.error ? data.render.plain.error.msg : '');
           if ($html_enabled.prop('checked')) {

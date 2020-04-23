@@ -34,6 +34,7 @@ class TemplateForm(forms.ModelForm):
         fields = [
             'name',
             'description',
+            'is_marketing',
             'subject',
             'plain_body',
             'html_body',
@@ -117,7 +118,11 @@ class CreateBatchForm(forms.ModelForm):
         submit = _("Send")
         submit_cls = "btn-primary"
 
-        if 'query' in self.data and 'template' in self.data:
+        if (
+            self.is_valid()
+            and 'query' in self.data
+            and 'template' in self.data
+        ):
             # once the form is submitted once, add the foolproof test (we now know the user count)
             query = self.fields['query'].queryset.get(pk=self.data['query'])
 
@@ -165,3 +170,20 @@ class CreateBatchForm(forms.ModelForm):
                 css_class="{} btn-block".format(submit_cls),
             )
         )
+
+    def clean(self):
+        query = self.cleaned_data['query']
+        result, qs = massmailer.models.Query.execute(query.query)
+        template = self.cleaned_data['template']
+        if len(qs) == 0:
+            raise forms.ValidationError(_('The queryset must be non empty.'))
+        if (
+            len(qs) > 0
+            and template.is_marketing
+            and not hasattr(qs[0], 'get_unsubscribe_url')
+        ):
+            raise forms.ValidationError(
+                _(
+                    'The template is a mailing but the query model has no get_unsubscribe_url method.'
+                )
+            )
