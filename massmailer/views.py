@@ -132,7 +132,7 @@ class TemplatePreviewView(PermissionRequiredMixin, MailerAdminMixin, View):
         page = int(request.POST['page'])
 
         template = massmailer.models.Template()
-        template.is_marketing = request.POST['is_marketing']
+        template.is_marketing = request.POST.get('is_marketing') == 'true'
         template.subject = request.POST['subject']
         template.plain_body = request.POST['plain']
         template.language = request.POST['language']
@@ -149,7 +149,7 @@ class TemplatePreviewView(PermissionRequiredMixin, MailerAdminMixin, View):
 
         results, user_qs = query.get_results()
         qs = results.queryset
-        if template.is_marketing == 'true' and not hasattr(
+        if template.is_marketing and not hasattr(
             qs.model, 'get_unsubscribe_url'
         ):
             data['error'] = _(
@@ -172,7 +172,7 @@ class TemplatePreviewView(PermissionRequiredMixin, MailerAdminMixin, View):
             context[results.model_name] = object
             data['render'] = template.full_preview(context)
             data['render']['header'] = ''
-            if template.is_marketing == 'true':
+            if template.is_marketing:
                 data['render']['header'] = "List-Unsubscribe: " + getattr(
                     object, 'get_unsubscribe_url'
                 )
