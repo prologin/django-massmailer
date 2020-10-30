@@ -384,7 +384,7 @@ class BatchEmail(models.Model):
         ordering = ['state']
 
     def __str__(self):
-        return '[{}] {}'.format(self.state_display, self.id)
+        return '[{}] {}'.format(self.state_display, str(self.id))
 
     @property
     def state_display(self):
@@ -402,7 +402,7 @@ class BatchEmail(models.Model):
         assert self.subject
         assert self.body
         # add a custom header to resolve the mail ID from bounces/complaints
-        headers = {'X-MID': self.id}
+        headers = {'X-MID': str(self.id)}
         if self.unsubscribe_url:
             headers['List-Unsubscribe'] = self.unsubscribe_url
 
