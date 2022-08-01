@@ -1,0 +1,36 @@
+# Change pip's cache directory to be inside the project directory since we can
+# only cache local items.
+variables:
+  PIP_CACHE_DIR: "$CI_PROJECT_DIR/.cache/pip"
+
+cache:
+  paths:
+    - "$PIP_CACHE_DIR"
+
+before_script:
+  - pip install black
+  - pip install -e .
+
+stages:
+  - lint
+  - test
+
+lint:
+  stage: lint
+
+  image: python:latest
+
+  script:
+    - black --check .
+
+test:
+  stage: test
+
+  image: python:$PYTHON_VERSION
+
+  parallel:
+    matrix:
+      - PYTHON_VERSION: ["3.8", "3.9", "3.10"]
+
+  script:
+    - python runtests.py

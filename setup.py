@@ -25,8 +25,8 @@ setup(
         "django-bootstrap-breadcrumbs",  # breadcrumbs in default templates
         "django-crispy-forms",  # form builder compatible with Bootstrap
         "django-reversion",  # model revision/history
-        "django>=2.1",
-        "jinja2",  # sane templates
+        "django>=2.1,<3",
+        "jinja2==3.0.1",  # sane templates
         "markdown",
         "pyparsing",  # query language parser
     ],
